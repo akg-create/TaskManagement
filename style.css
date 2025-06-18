@@ -1,0 +1,16 @@
+.column {
+  width: 30%;
+  min-height: 200px;
+  margin: 10px;
+  padding: 10px;
+  float: left;
+  background-color: #f4f4f4;
+  border: 1px solid #ccc;
+}
+.task-card {
+  background: white;
+  margin: 5px;
+  padding: 8px;
+  border: 1px solid #aaa;
+  cursor: move;
+}
