@@ -1,16 +1,5 @@
-.column {
-  width: 30%;
-  min-height: 200px;
-  margin: 10px;
-  padding: 10px;
-  float: left;
-  background-color: #f4f4f4;
-  border: 1px solid #ccc;
-}
-.task-card {
-  background: white;
-  margin: 5px;
-  padding: 8px;
-  border: 1px solid #aaa;
-  cursor: move;
-}
+body { font-family: sans-serif; margin: 20px; }
+input, button { margin: 5px 0; padding: 8px; }
+#kanban-board { display: flex; justify-content: space-between; }
+.column { border: 1px solid #ccc; padding: 10px; width: 30%; background: #f9f9f9; }
+.task-card { background: #fff; border: 1px solid #000; margin: 5px; padding: 5px; }
