@@ -1,14 +1,30 @@
-<h2>TaskFlow Board</h2>
-<div id="columns">
-  <div class="column" id="todo"><h3>To Do</h3></div>
-  <div class="column" id="inprogress"><h3>In Progress</h3></div>
-  <div class="column" id="done"><h3>Done</h3></div>
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - TaskFlow</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <h2>Kanban Board</h2>
+  <button onclick="logout()">Logout</button>
+  <div id="kanban-board">
+    <div class="column" id="ToDo">
+      <h3>To Do</h3>
+      <div class="task-container"></div>
+      <button onclick="addTask('To Do')">Add Task</button>
+    </div>
+    <div class="column" id="InProgress">
+      <h3>In Progress</h3>
+      <div class="task-container"></div>
+      <button onclick="addTask('In Progress')">Add Task</button>
+    </div>
+    <div class="column" id="Done">
+      <h3>Done</h3>
+      <div class="task-container"></div>
+      <button onclick="addTask('Done')">Add Task</button>
+    </div>
+  </div>
 
-<form id="taskForm">
-  <input type="text" id="taskName" placeholder="New task" required />
-  <button type="submit">Add Task</button>
-</form>
-
-<script src="firebase-config.js"></script>
-<script src="main.js"></script>
+  <script type="module" src="kanban.js"></script>
+</body>
+</html>
