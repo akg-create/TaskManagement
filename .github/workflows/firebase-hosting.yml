@@ -3,21 +3,30 @@ name: Deploy to Firebase Hosting
 on:
   push:
     branches:
-      - main  # Deploy on every push to main branch
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📦 Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: 🔧 Install Firebase CLI
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: 🚀 Deploy to Firebase Hosting
-        run: firebase deploy --only hosting --project taskflow-f0704 --token "${{ secrets.FIREBASE_SERVICE_ACCOUNT_TASKFLOW_F0704 }}" --debug
-
-
+      - name: Authenticate to Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TASKFLOW_F0704 }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT_TASKFLOW_F0704" > ${HOME}/firebase-service-account.json
+          firebase login:ci --no-localhost
+          firebase use taskflow-f0704
+          firebase deploy --only hosting --project taskflow-f0704 --token "$(firebase login:ci --no-localhost)"
 
