@@ -18,3 +18,6 @@ jobs:
 
       - name: 🚀 Deploy to Firebase Hosting
         run: firebase deploy --only hosting --project taskflow-f0704 --token "${{ secrets.FIREBASE_SERVICE_ACCOUNT_TASKFLOW_F0704 }}" --debug
+
+
+
