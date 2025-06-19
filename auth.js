@@ -18,9 +18,10 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
     username,
     email
   });
-  alert('Registration successful');
-  window.location.href = "dashboard.html";
-});
+  alert('Registration successful! Redirecting to dashboard...');
+  setTimeout(() => {
+    window.location.href = "dashboard.html";
+}, 1500);
 
 // Login
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
