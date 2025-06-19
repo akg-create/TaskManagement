@@ -20,6 +20,16 @@ input, button {
   background: #f9f9f9;
 }
 
+.task-container {
+  min-height: 50px; /* ensures drop target is always visible */
+  transition: background-color 0.3s ease, border 0.3s ease;
+}
+
+.task-container.drag-over {
+  background-color: #d0e6f7;
+  border: 2px dashed #3498db;
+}
+
 .task-card {
   position: relative;
   background: #fff;
