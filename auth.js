@@ -21,7 +21,8 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
   alert('Registration successful! Redirecting to dashboard...');
   setTimeout(() => {
     window.location.href = "dashboard.html";
-}, 1500);
+  }, 1500); 
+}); 
 
 // Login
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
@@ -37,4 +38,4 @@ window.logout = async function () {
   await signOut(auth);
   window.location.href = "login.html";
 };
- 
+
