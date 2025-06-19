@@ -16,10 +16,17 @@ function setupDragAndDrop() {
     container.addEventListener('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
+      container.classList.add('drag-over');  // Add visual indicator
+    });
+
+    container.addEventListener('dragleave', e => {
+      container.classList.remove('drag-over');  // Remove indicator when leaving
     });
 
     container.addEventListener('drop', async e => {
       e.preventDefault();
+      container.classList.remove('drag-over');  // Remove indicator on drop
+
       const taskId = e.dataTransfer.getData("text/plain");
       const newStatus = container.closest('.column').id;
 
@@ -66,15 +73,13 @@ async function loadTasks(uid) {
       if (container) container.appendChild(card);
     });
 
-    setupDragAndDrop(); // Important to call this after rendering
+    setupDragAndDrop(); // Setup drag-drop after rendering tasks
   });
 }
 
 onAuthStateChanged(auth, user => {
   if (!user) window.location.href = "login.html";
-  else {
-    loadTasks(user.uid);
-  }
+  else loadTasks(user.uid);
 });
 
 window.addTask = async function () {
