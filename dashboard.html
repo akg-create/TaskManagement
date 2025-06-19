@@ -7,6 +7,7 @@
 <body>
   <h2>Kanban Board</h2>
   <button onclick="logout()">Logout</button>
+
   <div id="kanban-board">
     <div class="column" id="ToDo">
       <h3>To Do</h3>
@@ -25,6 +26,42 @@
     </div>
   </div>
 
+  <!-- Load Firebase Auth for logout -->
+  <script type="module">
+    import { auth } from './firebase-config.js';
+    import { signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+
+    window.logout = async function () {
+      await signOut(auth);
+      window.location.href = "login.html";
+    };
+  </script>
+
+  <!-- Drag-and-drop logic (non-module script) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const containers = document.querySelectorAll('.task-container');
+
+      containers.forEach(container => {
+        container.addEventListener('dragover', (e) => e.preventDefault());
+        container.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          const taskId = e.dataTransfer.getData('text/plain');
+          const newStatus = container.parentElement.id;
+
+          // Update task in Firestore
+          const { getFirestore, doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js');
+          const { app } = await import('./firebase-config.js');
+          const db = getFirestore(app);
+          const taskRef = doc(db, 'tasks', taskId);
+          await updateDoc(taskRef, { status: newStatus });
+        });
+      });
+    });
+  </script>
+
+  <!-- Main Kanban logic -->
   <script type="module" src="kanban.js"></script>
 </body>
 </html>
+
