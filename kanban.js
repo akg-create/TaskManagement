@@ -11,7 +11,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-// Check auth and load tasks
+// Load tasks for the logged-in user
 onAuthStateChanged(auth, user => {
   if (!user) window.location.href = "login.html";
   else {
@@ -20,10 +20,26 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-// Load tasks into their columns
+function setupDragAndDrop() {
+  document.querySelectorAll('.task-container').forEach(container => {
+    container.addEventListener('dragover', e => e.preventDefault());
+    container.addEventListener('drop', async e => {
+      e.preventDefault();
+      const taskId = e.dataTransfer.getData("text/plain");
+      const newStatus = container.parentElement.id;
+
+      if (taskId && newStatus) {
+        const taskRef = doc(db, "tasks", taskId);
+        await updateDoc(taskRef, { status: newStatus });
+      }
+    });
+  });
+}
+
+// Load and render tasks
 async function loadTasks(uid) {
   const q = query(collection(db, "tasks"), where("user_id", "==", uid));
-  onSnapshot(q, (snapshot) => {
+  onSnapshot(q, snapshot => {
     document.querySelectorAll(".task-container").forEach(el => el.innerHTML = "");
 
     snapshot.forEach(docSnap => {
@@ -34,25 +50,22 @@ async function loadTasks(uid) {
       card.className = "task-card";
       card.draggable = true;
       card.dataset.id = taskId;
+      card.textContent = task.title;
 
-      // Task title
-      const titleSpan = document.createElement("span");
-      titleSpan.textContent = task.title;
-
-      // Delete button
+      // Add delete button
       const deleteBtn = document.createElement("button");
       deleteBtn.textContent = "✖";
-      deleteBtn.style.marginLeft = "10px";
-      deleteBtn.onclick = async () => {
+      deleteBtn.className = "delete-btn";
+      deleteBtn.onclick = async e => {
+        e.stopPropagation();
         if (confirm("Delete this task?")) {
           await deleteDoc(doc(db, "tasks", taskId));
         }
       };
-
-      card.appendChild(titleSpan);
       card.appendChild(deleteBtn);
 
-      card.addEventListener("dragstart", (e) => {
+      // Add drag start
+      card.addEventListener("dragstart", e => {
         e.dataTransfer.setData("text/plain", taskId);
       });
 
@@ -62,9 +75,9 @@ async function loadTasks(uid) {
   });
 }
 
-// Add new task to "To Do"
+// Add task (always starts in 'To Do')
 window.addTask = async function () {
-  const title = prompt("Task title:");
+  const title = prompt("Enter task title:");
   if (!title) return;
 
   await addDoc(collection(db, "tasks"), {
@@ -75,18 +88,3 @@ window.addTask = async function () {
   });
 };
 
-// Enable drag and drop behavior
-function setupDragAndDrop() {
-  document.querySelectorAll(".task-container").forEach(container => {
-    container.addEventListener("dragover", (e) => e.preventDefault());
-
-    container.addEventListener("drop", async (e) => {
-      e.preventDefault();
-      const taskId = e.dataTransfer.getData("text/plain");
-      const newStatus = container.parentElement.id;
-
-      const taskRef = doc(db, "tasks", taskId);
-      await updateDoc(taskRef, { status: newStatus });
-    });
-  });
-}
