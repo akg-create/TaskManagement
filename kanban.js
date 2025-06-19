@@ -13,11 +13,15 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/fi
 
 function setupDragAndDrop() {
   document.querySelectorAll('.task-container').forEach(container => {
-    container.addEventListener('dragover', e => e.preventDefault());
+    container.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    });
+
     container.addEventListener('drop', async e => {
       e.preventDefault();
       const taskId = e.dataTransfer.getData("text/plain");
-      const newStatus = container.parentElement.id;  // Should match column IDs
+      const newStatus = container.closest('.column').id;
 
       if (taskId && newStatus) {
         const taskRef = doc(db, "tasks", taskId);
@@ -55,13 +59,14 @@ async function loadTasks(uid) {
 
       card.addEventListener("dragstart", e => {
         e.dataTransfer.setData("text/plain", taskId);
+        e.dataTransfer.effectAllowed = "move";
       });
 
       const container = document.querySelector(`#${task.status} .task-container`);
       if (container) container.appendChild(card);
     });
 
-    setupDragAndDrop(); 
+    setupDragAndDrop(); // Important to call this after rendering
   });
 }
 
@@ -72,14 +77,13 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-// ✅ Add new task to "ToDo"
 window.addTask = async function () {
   const title = prompt("Enter task title:");
   if (!title) return;
 
   await addDoc(collection(db, "tasks"), {
     title,
-    status: "ToDo", 
+    status: "ToDo",
     user_id: auth.currentUser.uid,
     created_at: new Date()
   });
