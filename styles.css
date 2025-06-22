@@ -1,27 +1,102 @@
+/* General Body Styling */
 body {
-  font-family: sans-serif;
-  margin: 20px;
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  height: 100vh;
+  background: linear-gradient(to right, #74ebd5, #acb6e5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-input, button {
-  margin: 5px 0;
-  padding: 8px;
+/* Shared Input and Button Styling */
+input, button, select {
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
+button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+/* Link Styling */
+a {
+  color: #3498db;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Login/Register Form Container */
+.form-container {
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  margin-top: 100px;
+}
+
+/* Dashboard Layout */
+.dashboard-container {
+  max-width: 1200px;
+  width: 100%;
+  margin-top: 30px;
+}
+
+/* Top Buttons Row */
+.button-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+/* Kanban Board */
 #kanban-board {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 20px;
+  padding: 0 20px 40px;
+  flex-wrap: wrap;
 }
 
+/* Columns */
 .column {
-  border: 1px solid #ccc;
-  padding: 10px;
-  width: 30%;
-  background: #f9f9f9;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 20px;
+  min-height: 500px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
 }
 
+.column h3 {
+  text-align: center;
+  color: #2c3e50;
+}
+
+/* Task Cards and Containers */
 .task-container {
-  min-height: 50px; /* ensures drop target is always visible */
+  flex-grow: 1;
+  min-height: 50px;
   transition: background-color 0.3s ease, border 0.3s ease;
 }
 
@@ -33,9 +108,11 @@ input, button {
 .task-card {
   position: relative;
   background: #fff;
-  border: 1px solid #000;
-  margin: 5px;
-  padding: 5px 30px 5px 5px; /* padding right for delete button */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 12px 35px 12px 12px;
+  margin: 10px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   cursor: grab;
 }
 
@@ -45,17 +122,47 @@ input, button {
 
 .delete-btn {
   position: absolute;
-  top: 2px;
-  right: 5px;
+  top: 8px;
+  right: 8px;
   background: #e74c3c;
   color: white;
   border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+  text-align: center;
   cursor: pointer;
-  font-size: 14px;
-  padding: 0 6px;
-  border-radius: 3px;
 }
 
 .delete-btn:hover {
-  background: #c0392b;
+  background-color: #c0392b;
 }
+
+/* Task Modal */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+

@@ -1,41 +1,186 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Dashboard - TaskFlow</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f7fa;
+      display: flex;
+      justify-content: center;
+    }
+
+    .dashboard-container {
+      background: linear-gradient(to right, #74ebd5, #acb6e5);
+      padding: 40px 20px;
+      min-height: 100vh;
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+      background-color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    .button-row button {
+      padding: 10px 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .button-row button:hover {
+      background-color: #2980b9;
+    }
+
+    #kanban-board {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 30px;
+      flex-wrap: wrap;
+    }
+
+    .column {
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 20px;
+      min-height: 500px;
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .column h3 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    .task-container {
+      flex-grow: 1;
+      min-height: 100px;
+    }
+
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .modal-content input,
+    .modal-content select,
+    .modal-content button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 1rem;
+    }
+
+    .modal-content button[type="submit"] {
+      background-color: #3498db;
+      color: white;
+      border: none;
+    }
+
+    .modal-content button[type="button"] {
+      background-color: #ccc;
+    }
+  </style>
 </head>
 <body>
-  <h2>Kanban Board</h2>
-  <button onclick="logout()">Logout</button>
-  <button onclick="addTask()">Add Task</button>
+  <div class="dashboard-container">
+    <!-- TOP CENTERED BUTTONS -->
+    <div class="button-row">
+      <button onclick="openTaskForm()">Add Task</button>
+      <button onclick="logout()">Logout</button>
+    </div>
 
-  <div id="kanban-board">
-    <div class="column" id="ToDo">
-      <h3>To Do</h3>
-      <div class="task-container"></div>
-    </div>
-    <div class="column" id="InProgress">
-      <h3>In Progress</h3>
-      <div class="task-container"></div>
-    </div>
-    <div class="column" id="Done">
-      <h3>Done</h3>
-      <div class="task-container"></div>
+    <!-- KANBAN BOARD BELOW BUTTONS -->
+    <div id="kanban-board">
+      <div class="column" id="ToDo">
+        <h3>To Do</h3>
+        <div class="task-container"></div>
+      </div>
+      <div class="column" id="InProgress">
+        <h3>In Progress</h3>
+        <div class="task-container"></div>
+      </div>
+      <div class="column" id="Done">
+        <h3>Done</h3>
+        <div class="task-container"></div>
+      </div>
     </div>
   </div>
 
-  <!-- Firebase Logout -->
+  <!-- TASK MODAL -->
+  <div id="taskModal" class="modal hidden">
+    <form id="taskForm" class="modal-content">
+      <h3>Add New Task</h3>
+      <input type="text" id="taskTitle" placeholder="Task Title" required>
+      <select id="status">
+        <option value="ToDo">To Do</option>
+        <option value="InProgress">In Progress</option>
+        <option value="Done">Done</option>
+      </select>
+      <button type="submit">Create Task</button>
+      <button type="button" onclick="closeTaskForm()">Cancel</button>
+    </form>
+  </div>
+
+  <!-- LOGOUT SCRIPT -->
   <script type="module">
     import { auth } from './firebase-config.js';
     import { signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-    window.logout = async function () {
-      await signOut(auth);
-      window.location.href = "login.html";
+    window.logout = () => {
+      signOut(auth).then(() => {
+        window.location.href = "login.html";
+      }).catch(err => alert("Logout failed: " + err.message));
     };
   </script>
 
-  <!-- Main Kanban Script -->
   <script type="module" src="kanban.js"></script>
+  <script type="module" src="tasks.js"></script>
+
+  <script>
+    function openTaskForm() {
+      document.getElementById("taskModal").classList.remove("hidden");
+    }
+
+    function closeTaskForm() {
+      document.getElementById("taskModal").classList.add("hidden");
+    }
+  </script>
 </body>
 </html>
