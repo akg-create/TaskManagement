@@ -28,8 +28,12 @@
     onAuthStateChanged(auth, async user => {
       if (!user) return window.location.href = "login.html";
 
-      const userDoc = await getDocs(doc(db, "users", user.uid));
-      if (!userDoc.data().isAdmin) return alert("Access Denied");
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (!userDoc.exists() || !userDoc.data().isAdmin) {
+        alert("Access Denied");
+        return window.location.href = "login.html";
+      }
+
 
       const usersSnap = await getDocs(collection(db, "users"));
       const userList = document.getElementById("userList");
