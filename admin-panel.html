@@ -20,6 +20,7 @@
     import {
       collection,
       getDocs,
+      getDoc,
       updateDoc,
       deleteDoc,
       doc
@@ -28,30 +29,41 @@
     onAuthStateChanged(auth, async user => {
       if (!user) return window.location.href = "login.html";
 
+      // Check if logged in user is admin
       const userDoc = await getDoc(doc(db, "users", user.uid));
       if (!userDoc.exists() || !userDoc.data().isAdmin) {
         alert("Access Denied");
         return window.location.href = "login.html";
       }
 
-
+      // Load users
       const usersSnap = await getDocs(collection(db, "users"));
       const userList = document.getElementById("userList");
+      userList.innerHTML = ""; // Clear list before appending
+
       usersSnap.forEach(docSnap => {
         const u = docSnap.data();
         const li = document.createElement("li");
-        li.innerHTML = `${u.username || u.email} 
-          <button onclick="toggleUser('${docSnap.id}', ${!u.active})">${u.active ? 'Deactivate' : 'Activate'}</button>`;
+        li.innerHTML = `
+          ${u.username || u.email} - ${u.active ? "Active" : "Inactive"}
+          <button onclick="toggleUser('${docSnap.id}', ${!u.active})">${u.active ? 'Deactivate' : 'Activate'}</button>
+          <button onclick="deleteUser('${docSnap.id}')">Delete</button>
+        `;
         userList.appendChild(li);
       });
 
+      // Load tasks
       const tasksSnap = await getDocs(collection(db, "tasks"));
       const taskList = document.getElementById("taskList");
-      tasksSnap.forEach(task => {
-        const t = task.data();
+      taskList.innerHTML = ""; // Clear list before appending
+
+      tasksSnap.forEach(taskDoc => {
+        const t = taskDoc.data();
         const li = document.createElement("li");
-        li.innerHTML = `${t.title} - ${t.status} 
-          <button onclick="deleteTask('${task.id}')">Delete</button>`;
+        li.innerHTML = `
+          ${t.title} - ${t.status}
+          <button onclick="deleteTask('${taskDoc.id}')">Delete</button>
+        `;
         taskList.appendChild(li);
       });
     });
@@ -62,10 +74,20 @@
       location.reload();
     };
 
+    window.deleteUser = async (uid) => {
+      if (confirm("Delete this user? This action cannot be undone.")) {
+        await deleteDoc(doc(db, "users", uid));
+        alert("User deleted");
+        location.reload();
+      }
+    };
+
     window.deleteTask = async (id) => {
-      await deleteDoc(doc(db, "tasks", id));
-      alert("Task deleted");
-      location.reload();
+      if (confirm("Delete this task? This action cannot be undone.")) {
+        await deleteDoc(doc(db, "tasks", id));
+        alert("Task deleted");
+        location.reload();
+      }
     };
 
     window.logout = async function () {
