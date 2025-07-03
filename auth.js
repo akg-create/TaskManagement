@@ -33,14 +33,12 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   try {
     const userCred = await signInWithEmailAndPassword(auth, email, password);
 
-    // Check Firestore for isAdmin flag
     const userDocRef = doc(db, "users", userCred.user.uid);
     const userDocSnap = await getDoc(userDocRef);
-
     const isAdmin = userDocSnap.exists() && userDocSnap.data().isAdmin;
 
     if (isAdmin) {
-      const goToAdmin = confirm("You are logged in as an Admin. Do you want to go to the Admin Panel?");
+      const goToAdmin = confirm("You're logged in as Admin. Go to Admin Panel?");
       if (goToAdmin) {
         window.location.href = "admin-panel.html";
       } else {
@@ -49,7 +47,6 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     } else {
       window.location.href = "dashboard.html";
     }
-
   } catch (err) {
     alert("Login failed: " + err.message);
   }
