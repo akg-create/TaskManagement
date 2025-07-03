@@ -11,8 +11,8 @@
   <h3>Users</h3>
   <ul id="userList"></ul>
 
-  <h3>All Tasks</h3>
-  <ul id="taskList"></ul>
+  <h3>User's Tasks</h3>
+  <ul id="userTaskList"></ul>
 
   <script type="module">
     import { auth, db } from './firebase-config.js';
@@ -23,70 +23,91 @@
       getDoc,
       updateDoc,
       deleteDoc,
-      doc
+      doc,
+      query,
+      where
     } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    let currentUserId = null;
+    let currentAdminId = null;
 
     onAuthStateChanged(auth, async user => {
       if (!user) return window.location.href = "login.html";
+      currentUserId = user.uid;
 
-      // Check if logged in user is admin
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (!userDoc.exists() || !userDoc.data().isAdmin) {
+      // Verify logged in user is admin
+      const currentAdminDoc = await getDoc(doc(db, "users", user.uid));
+      if (!currentAdminDoc.exists() || !currentAdminDoc.data().isAdmin) {
         alert("Access Denied");
         return window.location.href = "login.html";
       }
+      currentAdminId = user.uid;
 
-      // Load users
+      await loadUsers();
+      clearUserTasks();
+    });
+
+    async function loadUsers() {
       const usersSnap = await getDocs(collection(db, "users"));
       const userList = document.getElementById("userList");
       userList.innerHTML = ""; // Clear list before appending
 
       usersSnap.forEach(docSnap => {
         const u = docSnap.data();
+        const uid = docSnap.id;
         const li = document.createElement("li");
         li.innerHTML = `
-          ${u.username || u.email} - ${u.active ? "Active" : "Inactive"}
-          <button onclick="toggleUser('${docSnap.id}', ${!u.active})">${u.active ? 'Deactivate' : 'Activate'}</button>
-          <button onclick="deleteUser('${docSnap.id}')">Delete</button>
+          ${u.username || u.email} - <strong>${u.active ? "Active" : "Inactive"}</strong>
+          <button onclick="viewUserTasks('${uid}')">View Tasks</button>
+          <button onclick="deleteUser('${uid}')">Delete User</button>
         `;
         userList.appendChild(li);
       });
+    }
 
-      // Load tasks
-      const tasksSnap = await getDocs(collection(db, "tasks"));
-      const taskList = document.getElementById("taskList");
-      taskList.innerHTML = ""; // Clear list before appending
+    async function viewUserTasks(userId) {
+      clearUserTasks();
+      const userTaskList = document.getElementById("userTaskList");
+      userTaskList.innerHTML = `<li>Loading tasks...</li>`;
+
+      const tasksQuery = query(collection(db, "tasks"), where("user_id", "==", userId));
+      const tasksSnap = await getDocs(tasksQuery);
+
+      userTaskList.innerHTML = ""; // Clear loading text
+
+      if (tasksSnap.empty) {
+        userTaskList.innerHTML = "<li>No tasks found for this user.</li>";
+        return;
+      }
 
       tasksSnap.forEach(taskDoc => {
         const t = taskDoc.data();
         const li = document.createElement("li");
-        li.innerHTML = `
-          ${t.title} - ${t.status}
-          <button onclick="deleteTask('${taskDoc.id}')">Delete</button>
-        `;
-        taskList.appendChild(li);
+        li.textContent = `${t.title} - ${t.status}`;
+        userTaskList.appendChild(li);
       });
-    });
+    }
 
-    window.toggleUser = async (uid, state) => {
-      await updateDoc(doc(db, "users", uid), { active: state });
-      alert("User status updated");
-      location.reload();
-    };
+    async function clearUserTasks() {
+      document.getElementById("userTaskList").innerHTML = "";
+    }
 
     window.deleteUser = async (uid) => {
+      if (uid === currentAdminId) {
+        // Check if there is another admin before allowing deletion
+        const usersSnap = await getDocs(collection(db, "users"));
+        const otherAdmins = usersSnap.docs.filter(d => d.id !== currentAdminId && d.data().isAdmin);
+        if (otherAdmins.length === 0) {
+          alert("Cannot delete yourself as the only admin. Assign another admin before deleting.");
+          return;
+        }
+      }
+
       if (confirm("Delete this user? This action cannot be undone.")) {
         await deleteDoc(doc(db, "users", uid));
         alert("User deleted");
-        location.reload();
-      }
-    };
-
-    window.deleteTask = async (id) => {
-      if (confirm("Delete this task? This action cannot be undone.")) {
-        await deleteDoc(doc(db, "tasks", id));
-        alert("Task deleted");
-        location.reload();
+        await loadUsers();
+        clearUserTasks();
       }
     };
 
