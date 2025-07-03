@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Admin Login</title>
+  </head>
+  <body>
+    <h2>Admin Login</h2>
+    <form id="adminLoginForm>
+      <input type="email" id="adminEmail" placeholder="Email" required><br>
+      <input type="password" id="adminPassword" placeholder="Password" required><br>
+      <button type="submit">Login</button>
+    </form>
+
+    <script type="module">
+      import { auth, db } from './firebase-config.js';
+      import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firbase-auth.js";
+      import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+      document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = adminEmail.value;
+        const password = adminPassword.value;
+  
+        try {
+          const userCred = await signInWithEmailAndPassword(auth, email, password);
+          const userDoc = await getDoc(doc(db, "users", userCred.user.uid));
+          const userData = userDoc.data();
+  
+          if (userData?.isAdmin) {
+            window.location.href = "admin-panel.html";
+          } else {
+            alert("Access denied: Not an admin.");
+          }
+        } catch (err) {
+          alert("Login failed: " + err.message);
+        }
+      });
+    </script>
+  </body>
+</html>
