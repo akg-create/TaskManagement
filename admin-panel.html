@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel - TaskFlow</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h2>Admin Panel</h2>
+  <button onclick="logout()">Logout</button>
+
+  <h3>Users</h3>
+  <ul id="userList"></ul>
+
+  <h3>All Tasks</h3>
+  <ul id="taskList"></ul>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import {
+      collection,
+      getDocs,
+      updateDoc,
+      deleteDoc,
+      doc
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) return window.location.href = "login.html";
+
+      const userDoc = await getDocs(doc(db, "users", user.uid));
+      if (!userDoc.data().isAdmin) return alert("Access Denied");
+
+      const usersSnap = await getDocs(collection(db, "users"));
+      const userList = document.getElementById("userList");
+      usersSnap.forEach(docSnap => {
+        const u = docSnap.data();
+        const li = document.createElement("li");
+        li.innerHTML = `${u.username || u.email} 
+          <button onclick="toggleUser('${docSnap.id}', ${!u.active})">${u.active ? 'Deactivate' : 'Activate'}</button>`;
+        userList.appendChild(li);
+      });
+
+      const tasksSnap = await getDocs(collection(db, "tasks"));
+      const taskList = document.getElementById("taskList");
+      tasksSnap.forEach(task => {
+        const t = task.data();
+        const li = document.createElement("li");
+        li.innerHTML = `${t.title} - ${t.status} 
+          <button onclick="deleteTask('${task.id}')">Delete</button>`;
+        taskList.appendChild(li);
+      });
+    });
+
+    window.toggleUser = async (uid, state) => {
+      await updateDoc(doc(db, "users", uid), { active: state });
+      alert("User status updated");
+      location.reload();
+    };
+
+    window.deleteTask = async (id) => {
+      await deleteDoc(doc(db, "tasks", id));
+      alert("Task deleted");
+      location.reload();
+    };
+
+    window.logout = async function () {
+      await signOut(auth);
+      window.location.href = "login.html";
+    };
+  </script>
+</body>
+</html>
