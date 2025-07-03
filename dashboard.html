@@ -124,6 +124,7 @@
     <div class="button-row">
       <button onclick="openTaskForm()">Add Task</button>
       <button onclick="logout()">Logout</button>
+      <button id="adminBtn" style="display: none;">Admin Panel</button>
     </div>
 
     <!-- KANBAN BOARD BELOW BUTTONS -->
@@ -181,6 +182,22 @@
     function closeTaskForm() {
       document.getElementById("taskModal").classList.add("hidden");
     }
+  </script>
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists() && userDoc.data().isAdmin) {
+          const adminBtn = document.getElementById("adminBtn");
+          adminBtn.style.display = "inline-block";
+          adminBtn.onclick = () => window.location.href = "admin-panel.html";
+        }
+      }
+    });
   </script>
 </body>
 </html>
