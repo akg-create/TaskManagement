@@ -41,8 +41,8 @@
         alert("Access Denied");
         return window.location.href = "login.html";
       }
-      currentAdminId = user.uid;
 
+      currentAdminId = user.uid;
       await loadUsers();
       clearUserTasks();
     });
@@ -50,14 +50,23 @@
     async function loadUsers() {
       const usersSnap = await getDocs(collection(db, "users"));
       const userList = document.getElementById("userList");
-      userList.innerHTML = ""; // Clear list before appending
+      userList.innerHTML = "";
 
-      usersSnap.forEach(docSnap => {
+      usersSnap.forEach(async (docSnap) => {
         const u = docSnap.data();
         const uid = docSnap.id;
+
+        // Debug info
+        console.log("Checking user:", uid, u);
+
+        const taskSnap = await getDocs(query(collection(db, "tasks"), where("user_id", "==", uid)));
+        console.log(`Tasks found for ${uid}:`, taskSnap.size);
+
+        const isActive = taskSnap.size > 0;
+
         const li = document.createElement("li");
         li.innerHTML = `
-          ${u.username || u.email} - <strong>${u.active ? "Active" : "Inactive"}</strong>
+          ${u.username || u.email || "No name"} - <strong>${isActive ? "Active" : "Inactive"}</strong><br>
           <button onclick="viewUserTasks('${uid}')">View Tasks</button>
           <button onclick="deleteUser('${uid}')">Delete User</button>
         `;
@@ -94,7 +103,6 @@
 
     window.deleteUser = async (uid) => {
       if (uid === currentAdminId) {
-        // Check if there is another admin before allowing deletion
         const usersSnap = await getDocs(collection(db, "users"));
         const otherAdmins = usersSnap.docs.filter(d => d.id !== currentAdminId && d.data().isAdmin);
         if (otherAdmins.length === 0) {
@@ -111,10 +119,13 @@
       }
     };
 
+    window.viewUserTasks = viewUserTasks;
     window.logout = async function () {
       await signOut(auth);
       window.location.href = "login.html";
     };
+    
   </script>
 </body>
 </html>
+
