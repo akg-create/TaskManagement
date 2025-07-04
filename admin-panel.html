@@ -35,7 +35,6 @@
       if (!user) return window.location.href = "login.html";
       currentUserId = user.uid;
 
-      // Verify logged in user is admin
       const currentAdminDoc = await getDoc(doc(db, "users", user.uid));
       if (!currentAdminDoc.exists() || !currentAdminDoc.data().isAdmin) {
         alert("Access Denied");
@@ -50,6 +49,7 @@
     async function loadUsers() {
       const usersSnap = await getDocs(collection(db, "users"));
       const userList = document.getElementById("userList");
+      userList.innerHTML = "";
       userList.innerHTML = "";
 
       usersSnap.forEach(async (docSnap) => {
@@ -68,6 +68,10 @@
         li.innerHTML = `
           ${u.username || u.email || "No name"} - <strong>${isActive ? "Active" : "Inactive"}</strong><br>
           <button onclick="viewUserTasks('${uid}')">View Tasks</button>
+          <button onclick="editUser('${uid}', '${u.username || ''}')">Edit</button>
+          <button onclick="toggleUserActive('${uid}', ${!u.active})">
+            ${u.active ? 'Deactivate' : 'Activate'}
+          </button>
           <button onclick="deleteUser('${uid}')">Delete User</button>
         `;
         userList.appendChild(li);
@@ -82,7 +86,7 @@
       const tasksQuery = query(collection(db, "tasks"), where("user_id", "==", userId));
       const tasksSnap = await getDocs(tasksQuery);
 
-      userTaskList.innerHTML = ""; // Clear loading text
+      userTaskList.innerHTML = "";
 
       if (tasksSnap.empty) {
         userTaskList.innerHTML = "<li>No tasks found for this user.</li>";
@@ -97,7 +101,7 @@
       });
     }
 
-    async function clearUserTasks() {
+    function clearUserTasks() {
       document.getElementById("userTaskList").innerHTML = "";
     }
 
@@ -116,6 +120,26 @@
         alert("User deleted");
         await loadUsers();
         clearUserTasks();
+      }
+    };
+
+    window.toggleUserActive = async (uid, newState) => {
+      if (uid === currentAdminId) {
+        alert("You cannot deactivate yourself.");
+        return;
+      }
+
+      await updateDoc(doc(db, "users", uid), { active: newState });
+      alert(`User ${newState ? 'activated' : 'deactivated'}`);
+      await loadUsers();
+    };
+
+    window.editUser = async (uid, currentUsername) => {
+      const newUsername = prompt("Enter new username:", currentUsername);
+      if (newUsername && newUsername !== currentUsername) {
+        await updateDoc(doc(db, "users", uid), { username: newUsername });
+        alert("Username updated.");
+        await loadUsers();
       }
     };
 
