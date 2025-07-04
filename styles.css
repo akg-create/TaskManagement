@@ -166,3 +166,10 @@ a:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
+.small-btn {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  margin: 4px;
+  width: auto;
+  min-width: 80px;
+}
