@@ -80,7 +80,7 @@
           <button class="small-btn" onclick="toggleUserActive('${uid}', ${!u.active})">
             ${u.active ? 'Deactivate' : 'Activate'}
           </button>
-          <button onclick="deleteUser('${uid}')">Delete User</button>
+          <button class="small-btn" onclick="deleteUser('${uid}')">Delete User</button>
         `;
         userList.appendChild(li);
       });
