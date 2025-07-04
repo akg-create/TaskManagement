@@ -75,9 +75,9 @@
         const li = document.createElement("li");
         li.innerHTML = `
           ${u.username || u.email || "No name"} - <strong>${u.active ? "Active" : "Inactive"}</strong>
-          <button onclick="viewUserInfo('${uid}')">View Info</button>
-          <button onclick="viewUserTasks('${uid}')">View Tasks</button>
-          <button onclick="toggleUserActive('${uid}', ${!u.active})">
+          <button class="small-btn" onclick="viewUserInfo('${uid}')">View Info</button>
+          <button class="small-btn" onclick="viewUserTasks('${uid}')">View Tasks</button>
+          <button class="small-btn" onclick="toggleUserActive('${uid}', ${!u.active})">
             ${u.active ? 'Deactivate' : 'Activate'}
           </button>
           <button onclick="deleteUser('${uid}')">Delete User</button>
