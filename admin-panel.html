@@ -155,10 +155,11 @@
       }
     };
 
-    function closeUserInfoModal() {
+    window.closeUserInfoModal = function () {
       document.getElementById("userInfoModal").classList.add("hidden");
       selectedUserId = null;
-    }
+    };
+
 
     window.logout = async function () {
       await signOut(auth);
