@@ -34,143 +34,196 @@
   </div>
 
   <script type="module">
-    import { auth, db } from './firebase-config.js';
-    import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-    import {
-      collection,
-      getDocs,
-      getDoc,
-      updateDoc,
-      deleteDoc,
-      doc,
-      query,
-      where
-    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+  import { auth, db } from './firebase-config.js';
+  import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  import {
+    collection, getDocs, getDoc, updateDoc, deleteDoc, addDoc,
+    doc, query, where, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-    let currentAdminId = null;
-    let selectedUserId = null;
+  let currentAdminId = null;
+  let selectedUserId = null;
 
-    onAuthStateChanged(auth, async user => {
-      if (!user) return window.location.href = "login.html";
+  onAuthStateChanged(auth, async user => {
+    if (!user) return window.location.href = "login.html";
 
-      const adminDoc = await getDoc(doc(db, "users", user.uid));
-      if (!adminDoc.exists() || !adminDoc.data().isAdmin) {
-        alert("Access Denied");
-        return window.location.href = "login.html";
-      }
-
-      currentAdminId = user.uid;
-      await loadUsers();
-    });
-
-    async function loadUsers() {
-      const usersSnap = await getDocs(collection(db, "users"));
-      const userList = document.getElementById("userList");
-      userList.innerHTML = "";
-
-      usersSnap.forEach(docSnap => {
-        const u = docSnap.data();
-        const uid = docSnap.id;
-
-        const li = document.createElement("li");
-        li.innerHTML = `
-          ${u.username || u.email || "No name"} - <strong>${u.active ? "Active" : "Inactive"}</strong>
-          <button class="small-btn" onclick="viewUserInfo('${uid}')">View Info</button>
-          <button class="small-btn" onclick="viewUserTasks('${uid}')">View Tasks</button>
-          <button class="small-btn" onclick="toggleUserActive('${uid}', ${!u.active})">
-            ${u.active ? 'Deactivate' : 'Activate'}
-          </button>
-          <button class="small-btn" onclick="deleteUser('${uid}')">Delete User</button>
-        `;
-        userList.appendChild(li);
-      });
+    const adminDoc = await getDoc(doc(db, "users", user.uid));
+    if (!adminDoc.exists() || !adminDoc.data().isAdmin) {
+      alert("Access Denied");
+      return window.location.href = "login.html";
     }
 
-    window.viewUserInfo = async (uid) => {
-      const docSnap = await getDoc(doc(db, "users", uid));
-      const user = docSnap.data();
+    currentAdminId = user.uid;
+    await loadUsers();
+  });
 
-      selectedUserId = uid;
-      document.getElementById("infoUserId").textContent = uid;
-      document.getElementById("infoUsername").value = user.username || "";
-      document.getElementById("infoEmail").textContent = user.email || "";
-      document.getElementById("infoStatus").textContent = user.active ? "Active" : "Inactive";
+  async function loadUsers() {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const userList = document.getElementById("userList");
+    userList.innerHTML = "";
 
-      document.getElementById("userInfoModal").classList.remove("hidden");
-    };
-
-    window.closeUserInfoModal = function () {
-      document.getElementById("userInfoModal").classList.add("hidden");
-    };
-
-    document.getElementById("saveUserChanges").addEventListener("click", async () => {
-      const newUsername = document.getElementById("infoUsername").value;
-      if (selectedUserId && newUsername) {
-        await updateDoc(doc(db, "users", selectedUserId), { username: newUsername });
-        alert("User info updated.");
-        closeUserInfoModal();
-        await loadUsers();
-      }
+    usersSnap.forEach(docSnap => {
+      const u = docSnap.data();
+      const uid = docSnap.id;
+      const li = document.createElement("li");
+      li.innerHTML = `
+        ${u.username || u.email || "No name"} - <strong>${u.active ? "Active" : "Inactive"}</strong>
+        <button class="small-btn" onclick="viewUserInfo('${uid}')">View Info</button>
+        <button class="small-btn" onclick="viewUserTasks('${uid}')">View Tasks</button>
+        <button class="small-btn" onclick="showAddTaskModal('${uid}')">Add Task</button>
+        <button class="small-btn" onclick="toggleUserActive('${uid}', ${!u.active})">
+          ${u.active ? 'Deactivate' : 'Activate'}
+        </button>
+        <button class="small-btn" onclick="deleteUser('${uid}')">Delete User</button>
+      `;
+      userList.appendChild(li);
     });
+  }
 
-    window.viewUserTasks = async function (uid) {
-      const taskList = document.getElementById("userTaskList");
-      taskList.innerHTML = "<li>Loading...</li>";
-      document.getElementById("userTasksModal").classList.remove("hidden");
+  window.viewUserInfo = async (uid) => {
+    const docSnap = await getDoc(doc(db, "users", uid));
+    const user = docSnap.data();
+    selectedUserId = uid;
+    document.getElementById("infoUserId").textContent = uid;
+    document.getElementById("infoUsername").value = user.username || "";
+    document.getElementById("infoEmail").textContent = user.email || "";
+    document.getElementById("infoStatus").textContent = user.active ? "Active" : "Inactive";
+    document.getElementById("userInfoModal").classList.remove("hidden");
+  };
 
-      const taskQuery = query(collection(db, "tasks"), where("user_id", "==", uid));
-      const taskSnap = await getDocs(taskQuery);
-      taskList.innerHTML = "";
+  window.closeUserInfoModal = function () {
+    document.getElementById("userInfoModal").classList.add("hidden");
+  };
 
-      if (taskSnap.empty) {
-        taskList.innerHTML = "<li>No tasks found.</li>";
-        return;
-      }
-
-      taskSnap.forEach(t => {
-        const data = t.data();
-        const li = document.createElement("li");
-        li.textContent = `${data.title} - ${data.status}`;
-        taskList.appendChild(li);
-      });
-    };
-
-    window.closeTaskModal = function () {
-      document.getElementById("userTasksModal").classList.add("hidden");
-    };
-
-    window.toggleUserActive = async (uid, state) => {
-      if (uid === currentAdminId) {
-        alert("You cannot deactivate yourself.");
-        return;
-      }
-
-      await updateDoc(doc(db, "users", uid), { active: state });
-      alert("User status updated.");
+  document.getElementById("saveUserChanges").addEventListener("click", async () => {
+    const newUsername = document.getElementById("infoUsername").value;
+    if (selectedUserId && newUsername) {
+      await updateDoc(doc(db, "users", selectedUserId), { username: newUsername });
+      alert("User info updated.");
+      closeUserInfoModal();
       await loadUsers();
-    };
+    }
+  });
 
-    window.deleteUser = async (uid) => {
-      if (uid === currentAdminId) {
-        const usersSnap = await getDocs(collection(db, "users"));
-        const otherAdmins = usersSnap.docs.filter(d => d.id !== currentAdminId && d.data().isAdmin);
-        if (otherAdmins.length === 0) {
-          alert("Cannot delete yourself as the only admin.");
-          return;
-        }
+  window.viewUserTasks = async function (uid) {
+    const taskList = document.getElementById("userTaskList");
+    taskList.innerHTML = "<li>Loading...</li>";
+    document.getElementById("userTasksModal").classList.remove("hidden");
+
+    const taskQuery = query(collection(db, "tasks"), where("user_id", "==", uid));
+    const taskSnap = await getDocs(taskQuery);
+    taskList.innerHTML = "";
+
+    taskSnap.forEach(t => {
+      const data = t.data();
+      const taskId = t.id;
+      const li = document.createElement("li");
+
+      const flaggedText = data.flagged ? " <span style='color:red;'>[FLAGGED]</span>" : "";
+      const buttons = [];
+
+      if (data.status !== "approved") {
+        buttons.push(`<button onclick="updateTaskStatus('${taskId}', 'approved')">Approve</button>`);
       }
 
-      if (confirm("Delete this user?")) {
-        await deleteDoc(doc(db, "users", uid));
-        alert("User deleted.");
-        await loadUsers();
+      if (data.status !== "rejected") {
+        buttons.push(`<button onclick="updateTaskStatus('${taskId}', 'rejected')">Reject</button>`);
       }
-    };
 
-    window.logout = async function () {
-      await signOut(auth);
-      window.location.href = "login.html";
-    };
-  </script>
+      buttons.push(`<button onclick="editTaskPrompt('${taskId}', '${data.title}', '${data.status}')">Edit</button>`);
+      buttons.push(`<button onclick="flagTask('${taskId}')">Flag</button>`);
+      buttons.push(`<button onclick="deleteTask('${taskId}')">Delete</button>`);
+
+      li.innerHTML = `<strong>${data.title}</strong> - ${data.status}${flaggedText}<br>${buttons.join(" ")}`;
+      taskList.appendChild(li);
+    });
+  };
+
+  window.closeTaskModal = function () {
+    document.getElementById("userTasksModal").classList.add("hidden");
+  };
+
+  window.updateTaskStatus = async (taskId, newStatus) => {
+    await updateDoc(doc(db, "tasks", taskId), { status: newStatus });
+    alert(`Task marked as ${newStatus}`);
+    await viewUserTasks(selectedUserId);
+  };
+
+  window.editTaskPrompt = async (taskId, title, status) => {
+    const newTitle = prompt("Edit Task Title", title);
+    const newStatus = prompt("Edit Task Status", status);
+    if (newTitle && newStatus) {
+      await updateDoc(doc(db, "tasks", taskId), { title: newTitle, status: newStatus });
+      alert("Task updated.");
+      await viewUserTasks(selectedUserId);
+    }
+  };
+
+  window.flagTask = async (taskId) => {
+    await updateDoc(doc(db, "tasks", taskId), { flagged: true });
+    alert("Task flagged as inappropriate.");
+    await viewUserTasks(selectedUserId);
+  };
+
+  window.deleteTask = async (taskId) => {
+    await deleteDoc(doc(db, "tasks", taskId));
+    alert("Task deleted.");
+    await viewUserTasks(selectedUserId);
+  };
+
+  window.toggleUserActive = async (uid, state) => {
+    if (uid === currentAdminId) {
+      alert("You cannot deactivate yourself.");
+      return;
+    }
+    await updateDoc(doc(db, "users", uid), { active: state });
+    alert("User status updated.");
+    await loadUsers();
+  };
+
+  window.deleteUser = async (uid) => {
+    if (uid === currentAdminId) {
+      const usersSnap = await getDocs(collection(db, "users"));
+      const otherAdmins = usersSnap.docs.filter(d => d.id !== currentAdminId && d.data().isAdmin);
+      if (otherAdmins.length === 0) {
+        alert("Cannot delete yourself as the only admin.");
+        return;
+      }
+    }
+    if (confirm("Delete this user?")) {
+      await deleteDoc(doc(db, "users", uid));
+      alert("User deleted.");
+      await loadUsers();
+    }
+  };
+
+  window.logout = async function () {
+    await signOut(auth);
+    window.location.href = "login.html";
+  };
+
+  window.showAddTaskModal = function(uid) {
+    selectedUserId = uid;
+    document.getElementById("addTaskModal").classList.remove("hidden");
+  };
+
+  window.closeAddTaskModal = function() {
+    document.getElementById("addTaskModal").classList.add("hidden");
+  };
+
+  window.addTaskForUser = async function () {
+    const title = document.getElementById("newTaskTitle").value;
+    const status = document.getElementById("newTaskStatus").value;
+    if (!title || !selectedUserId) return alert("Missing information.");
+    await addDoc(collection(db, "tasks"), {
+      title,
+      status,
+      user_id: selectedUserId,
+      created_at: serverTimestamp()
+    });
+    alert("Task added.");
+    closeAddTaskModal();
+  };
+</script>
 </body>
 </html>
