@@ -132,8 +132,8 @@ a:hover {
 /* Delete Button */
 .delete-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: -20px;
+  right: -10px;
   background: #e74c3c;
   color: white;
   border: none;
