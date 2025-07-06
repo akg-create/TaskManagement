@@ -190,7 +190,7 @@ a:hover {
   border-radius: 6px;
 }
 
-/* Clean Task List (Admin Panel) */
+/* 🔽 Scrollable, Clean Task List (Admin Panel) */
 #userTaskList {
   max-height: 300px;
   overflow-y: auto;
