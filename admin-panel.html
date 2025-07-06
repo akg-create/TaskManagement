@@ -5,35 +5,50 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h2>Admin Panel</h2>
-  <button onclick="logout()">Logout</button>
+<h2>Admin Panel</h2>
+<button onclick="logout()">Logout</button>
 
-  <h3>Users</h3>
-  <ul id="userList"></ul>
+<h3>Users</h3>
+<ul id="userList"></ul>
 
-  <!-- View User Info Modal -->
-  <div id="userInfoModal" class="modal hidden">
-    <div class="modal-content">
-      <h3>User Information</h3>
-      <p><strong>ID:</strong> <span id="infoUserId"></span></p>
-      <p><strong>Username:</strong> <input type="text" id="infoUsername" /></p>
-      <p><strong>Email:</strong> <span id="infoEmail"></span></p>
-      <p><strong>Status:</strong> <span id="infoStatus"></span></p>
-      <button id="saveUserChanges">Save Changes</button>
-      <button onclick="closeUserInfoModal()">Close</button>
-    </div>
+<!-- View User Info Modal -->
+<div id="userInfoModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>User Information</h3>
+    <p><strong>ID:</strong> <span id="infoUserId"></span></p>
+    <p><strong>Username:</strong> <input type="text" id="infoUsername" /></p>
+    <p><strong>Email:</strong> <span id="infoEmail"></span></p>
+    <p><strong>Status:</strong> <span id="infoStatus"></span></p>
+    <button id="saveUserChanges">Save Changes</button>
+    <button onclick="closeUserInfoModal()">Close</button>
   </div>
+</div>
 
-  <!-- View Tasks Modal -->
-  <div id="userTasksModal" class="modal hidden">
-    <div class="modal-content">
-      <h3>User's Tasks</h3>
-      <ul id="userTaskList"></ul>
-      <button onclick="closeTaskModal()">Close</button>
-    </div>
+<!-- View Tasks Modal -->
+<div id="userTasksModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>User's Tasks</h3>
+    <ul id="userTaskList"></ul>
+    <button onclick="closeTaskModal()">Close</button>
   </div>
+</div>
 
-  <script type="module">
+<!-- Add Task Modal -->
+<div id="addTaskModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Add Task for User</h3>
+    <input type="text" id="newTaskTitle" placeholder="Task Title" />
+    <select id="newTaskStatus">
+      <option value="ToDo">To Do</option>
+      <option value="InProgress">In Progress</option>
+      <option value="Done">Done</option>
+    </select>
+    <button onclick="addTaskForUser()">Create Task</button>
+    <button onclick="closeAddTaskModal()">Cancel</button>
+  </div>
+</div>
+
+<script type="module">
   import { auth, db } from './firebase-config.js';
   import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
   import {
@@ -67,15 +82,15 @@
       const uid = docSnap.id;
       const li = document.createElement("li");
       li.innerHTML = `
-        ${u.username || u.email || "No name"} - <strong>${u.active ? "Active" : "Inactive"}</strong>
-        <button class="small-btn" onclick="viewUserInfo('${uid}')">View Info</button>
-        <button class="small-btn" onclick="viewUserTasks('${uid}')">View Tasks</button>
-        <button class="small-btn" onclick="showAddTaskModal('${uid}')">Add Task</button>
-        <button class="small-btn" onclick="toggleUserActive('${uid}', ${!u.active})">
-          ${u.active ? 'Deactivate' : 'Activate'}
-        </button>
-        <button class="small-btn" onclick="deleteUser('${uid}')">Delete User</button>
-      `;
+          ${u.username || u.email || "No name"} - <strong>${u.active ? "Active" : "Inactive"}</strong>
+          <button class="small-btn" onclick="viewUserInfo('${uid}')">View Info</button>
+          <button class="small-btn" onclick="viewUserTasks('${uid}')">View Tasks</button>
+          <button class="small-btn" onclick="showAddTaskModal('${uid}')">Add Task</button>
+          <button class="small-btn" onclick="toggleUserActive('${uid}', ${!u.active})">
+            ${u.active ? 'Deactivate' : 'Activate'}
+          </button>
+          <button class="small-btn" onclick="deleteUser('${uid}')">Delete User</button>
+        `;
       userList.appendChild(li);
     });
   }
@@ -131,7 +146,13 @@
       }
 
       buttons.push(`<button onclick="editTaskPrompt('${taskId}', '${data.title}', '${data.status}')">Edit</button>`);
-      buttons.push(`<button onclick="flagTask('${taskId}')">Flag</button>`);
+
+      if (data.flagged) {
+        buttons.push(`<button onclick="unflagTask('${taskId}')">Unflag</button>`);
+      } else {
+        buttons.push(`<button onclick="flagTask('${taskId}')">Flag</button>`);
+      }
+
       buttons.push(`<button onclick="deleteTask('${taskId}')">Delete</button>`);
 
       li.innerHTML = `<strong>${data.title}</strong> - ${data.status}${flaggedText}<br>${buttons.join(" ")}`;
@@ -162,6 +183,12 @@
   window.flagTask = async (taskId) => {
     await updateDoc(doc(db, "tasks", taskId), { flagged: true });
     alert("Task flagged as inappropriate.");
+    await viewUserTasks(selectedUserId);
+  };
+
+  window.unflagTask = async (taskId) => {
+    await updateDoc(doc(db, "tasks", taskId), { flagged: false });
+    alert("Task unflagged.");
     await viewUserTasks(selectedUserId);
   };
 
