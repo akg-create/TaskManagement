@@ -6,170 +6,155 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<h2>Admin Dashboard</h2>
-<button onclick="window.location.href='admin-panel.html'">Back to Admin Panel</button>
-<button onclick="logout()">Logout</button>
+  <h2>Admin Dashboard</h2>
+  <button onclick="window.location.href='admin-panel.html'">Back to Admin Panel</button>
+  <button onclick="logout()">Logout</button>
 
-<section>
-  <h3>User Stats</h3>
-  <p>Total Users: <span id="totalUsers">0</span></p>
-  <p>Active Users: <span id="activeUsers">0</span></p>
-  <p>Inactive Users: <span id="inactiveUsers">0</span></p>
-</section>
+  <section>
+    <h3>Filter Tasks</h3>
+    <label>From: <input type="date" id="startDate"></label>
+    <label>To: <input type="date" id="endDate"></label>
+    <button onclick="applyFilters()">Apply Filters</button>
+    <p id="filterMessage"></p>
+    <ul id="filteredTaskList"></ul>
+  </section>
 
-<section>
-  <h4>Active Users</h4>
-  <ul id="activeUserList"></ul>
+  <section>
+    <h3>User Stats</h3>
+    <p>Total Users: <span id="totalUsers">0</span></p>
+    <p>Active Users: <span id="activeUsers">0</span></p>
+    <p>Inactive Users: <span id="inactiveUsers">0</span></p>
+  </section>
 
-  <h4>Inactive Users</h4>
-  <ul id="inactiveUserList"></ul>
-</section>
+  <section>
+    <h3>Task Overview</h3>
+    <p>Total Tasks: <span id="totalTasks">0</span></p>
+    <canvas id="taskStatusChart" width="400" height="200"></canvas>
+  </section>
 
-<section>
-  <h3>Activity Overview</h3>
-  <p>Total Tasks: <span id="totalTasks">0</span></p>
-  <canvas id="taskCategoryChart" width="400" height="200"></canvas>
-</section>
+  <section>
+    <h4>User Lists</h4>
 
-<section>
-  <h3>Filter Tasks by Date Range</h3>
-  <input type="date" id="startDate">
-  <input type="date" id="endDate">
-  <button onclick="applyFilters()">Apply Filters</button>
-  <p id="filterSummary"></p>
-  <ul id="filteredTaskList"></ul>
-</section>
+    <button onclick="toggleUserList('active')">Show/Hide Active Users</button>
+    <div id="activeUserSection" class="hidden">
+      <h5>Active Users</h5>
+      <ul id="activeUserList"></ul>
+    </div>
 
-<script type="module">
-  import { auth, db } from './firebase-config.js';
-  import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-  import {
-    collection, getDocs, doc, getDoc,
-    query, where
-  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+    <button onclick="toggleUserList('inactive')">Show/Hide Inactive Users</button>
+    <div id="inactiveUserSection" class="hidden">
+      <h5>Inactive Users</h5>
+      <ul id="inactiveUserList"></ul>
+    </div>
+  </section>
 
-  let taskData = [];
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import {
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import {
+      collection,
+      getDocs,
+      query,
+      where,
+      Timestamp
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) return window.location.href = "login.html";
+    let allUsers = [];
+    let allTasks = [];
 
-    const adminDoc = await getDoc(doc(db, "users", user.uid));
-    if (!adminDoc.exists() || !adminDoc.data().isAdmin) {
-      alert("Access Denied");
-      return window.location.href = "login.html";
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return window.location.href = "login.html";
+      loadDashboardData();
+    });
+
+    async function loadDashboardData() {
+      const userSnap = await getDocs(collection(db, "users"));
+      allUsers = userSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const taskSnap = await getDocs(collection(db, "tasks"));
+      allTasks = taskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      document.getElementById("totalUsers").textContent = allUsers.length;
+      const activeUsers = allUsers.filter(u => u.active);
+      const inactiveUsers = allUsers.filter(u => !u.active);
+      document.getElementById("activeUsers").textContent = activeUsers.length;
+      document.getElementById("inactiveUsers").textContent = inactiveUsers.length;
+
+      document.getElementById("activeUserList").innerHTML = activeUsers.map(u =>
+        `<li>${u.username || u.email}</li>`).join('');
+      document.getElementById("inactiveUserList").innerHTML = inactiveUsers.map(u =>
+        `<li>${u.username || u.email}</li>`).join('');
+
+      document.getElementById("totalTasks").textContent = allTasks.length;
+      renderTaskChart();
     }
 
-    await loadStats();
-  });
+    function renderTaskChart() {
+      const statusCounts = { ToDo: 0, InProgress: 0, Done: 0 };
+      allTasks.forEach(t => {
+        if (statusCounts[t.status]) statusCounts[t.status]++;
+      });
 
-  async function loadStats() {
-    const usersSnap = await getDocs(collection(db, "users"));
-    const tasksSnap = await getDocs(collection(db, "tasks"));
-
-    let totalUsers = 0;
-    let activeUsers = 0;
-    let inactiveUsers = 0;
-
-    const activeList = document.getElementById("activeUserList");
-    const inactiveList = document.getElementById("inactiveUserList");
-    activeList.innerHTML = "";
-    inactiveList.innerHTML = "";
-
-    usersSnap.forEach(doc => {
-      const user = doc.data();
-      totalUsers++;
-      const li = document.createElement("li");
-      li.textContent = `${user.username || user.email}`;
-
-      if (user.active) {
-        activeUsers++;
-        activeList.appendChild(li);
-      } else {
-        inactiveUsers++;
-        inactiveList.appendChild(li);
-      }
-    });
-
-    document.getElementById("totalUsers").textContent = totalUsers;
-    document.getElementById("activeUsers").textContent = activeUsers;
-    document.getElementById("inactiveUsers").textContent = inactiveUsers;
-
-    taskData = [];
-    tasksSnap.forEach(doc => {
-      const task = doc.data();
-      task.created_at = task.created_at?.toDate?.() || new Date();
-      task.title = task.title || "Untitled";
-      task.status = task.status || "Unknown";
-      taskData.push(task);
-    });
-
-    document.getElementById("totalTasks").textContent = taskData.length;
-    drawTaskCategoryChart(taskData);
-  }
-
-  function drawTaskCategoryChart(data) {
-    const categoryCounts = { ToDo: 0, InProgress: 0, Done: 0 };
-
-    data.forEach(task => {
-      const status = task.status || "Unknown";
-      if (categoryCounts[status] !== undefined) {
-        categoryCounts[status]++;
-      }
-    });
-
-    const ctx = document.getElementById("taskCategoryChart").getContext("2d");
-    new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: Object.keys(categoryCounts),
-        datasets: [{
-          label: "Task Status Breakdown",
-          data: Object.values(categoryCounts),
-          backgroundColor: ["#3498db", "#f1c40f", "#2ecc71"]
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: { beginAtZero: true }
+      const ctx = document.getElementById("taskStatusChart").getContext("2d");
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ["To Do", "In Progress", "Done"],
+          datasets: [{
+            label: 'Task Status Count',
+            data: [statusCounts.ToDo, statusCounts.InProgress, statusCounts.Done],
+            backgroundColor: ['#3498db', '#f1c40f', '#2ecc71']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } }
         }
-      }
-    });
-  }
-
-  window.applyFilters = () => {
-    const start = document.getElementById("startDate").valueAsDate;
-    const end = document.getElementById("endDate").valueAsDate;
-    const summary = document.getElementById("filterSummary");
-    const list = document.getElementById("filteredTaskList");
-
-    if (!start || !end) {
-      alert("Please select both start and end dates.");
-      return;
+      });
     }
 
-    const filteredTasks = taskData.filter(t =>
-      t.created_at >= start && t.created_at <= end
-    );
+    window.applyFilters = () => {
+      const start = document.getElementById("startDate").value;
+      const end = document.getElementById("endDate").value;
+      const msg = document.getElementById("filterMessage");
+      const list = document.getElementById("filteredTaskList");
+      list.innerHTML = "";
 
-    summary.textContent = `Showing ${filteredTasks.length} tasks from ${start.toDateString()} to ${end.toDateString()}`;
+      if (!start || !end) {
+        msg.textContent = "Please select both start and end dates.";
+        return;
+      }
 
-    // Show task titles
-    list.innerHTML = "";
-    filteredTasks.forEach(t => {
-      const li = document.createElement("li");
-      li.textContent = `${t.title} - ${t.status} (${t.created_at.toLocaleDateString()})`;
-      list.appendChild(li);
-    });
+      const from = new Date(start);
+      const to = new Date(end);
+      to.setHours(23, 59, 59, 999); // include entire day
 
-    drawTaskCategoryChart(filteredTasks);
-  };
+      const filtered = allTasks.filter(t => {
+        const ts = t.created_at?.toDate?.();
+        return ts && ts >= from && ts <= to;
+      });
 
-  window.logout = async function () {
-    await signOut(auth);
-    window.location.href = "login.html";
-  };
-</script>
+      msg.textContent = `Showing ${filtered.length} tasks from ${start} to ${end}`;
+      list.innerHTML = filtered.length === 0
+        ? "<li>No tasks found in this range.</li>"
+        : filtered.map(t =>
+            `<li><strong>${t.title}</strong> - ${t.status}</li>`).join('');
+    };
+
+    window.toggleUserList = (type) => {
+      const sectionId = type === 'active' ? 'activeUserSection' : 'inactiveUserSection';
+      const section = document.getElementById(sectionId);
+      section.classList.toggle("hidden");
+    };
+
+    window.logout = async function () {
+      await signOut(auth);
+      window.location.href = "login.html";
+    };
+  </script>
 </body>
 </html>
 
