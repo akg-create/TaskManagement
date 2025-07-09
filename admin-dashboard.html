@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Analytics Dashboard - Task Management</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/char.js"></script>
+  </head>
+  <body>
+  <h2>Admin Analytics Dashboard</h2>
+  <button onclick="logout()">Logout</button>
+
+  <div class="filters">
+    <label>Date Range: <input type="date" id="startDate"> to <input type="date" id="endDate"></label>
+    <label>Role: 
+      <select id="roleFilter">
+        <option value="">All</option>
+        <option value="admin">Admin</option>
+        <option value="user">User</option>
+      </select>
+    </label>
+    <label>Category:
+      <select id="categoryFilter">
+        <option value="">All</option>
+        <option value="donation">Donation</option>
+        <option value="meal">Meal</option>
+        <option value="friend">Friend</option>
+      </select>
+    </label>
+    <button onclick="applyFilters()">Apply Filters</button>
+  </div>
+
+  <div class="chart-section">
+    <canvas id="userRegistrationChart"></canvas>
+    <canvas id="activeUserChart"></canvas>
+    <canvas id="categoryBreakdownChart"></canvas>
+  </div>
+
+  <div id="statTable"></div>
+
+  <script type="module" src="dashboard.js"></script>
+</body>
+</html>
