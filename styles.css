@@ -257,3 +257,27 @@ a:hover {
   color: red;
   font-weight: bold;
 }
+
+.chart-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+canvas {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  width: 400px;
+  height: 300px;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  justify-content: center;
+}
