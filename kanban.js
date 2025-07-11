@@ -10,23 +10,23 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-import { updateLastActive } from './utils.js';  // <-- NEW import
+import { updateLastActive } from './utils.js';  
 
 function setupDragAndDrop() {
   document.querySelectorAll('.task-container').forEach(container => {
     container.addEventListener('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
-      container.classList.add('drag-over');  // Add visual indicator
+      container.classList.add('drag-over');  
     });
 
     container.addEventListener('dragleave', e => {
-      container.classList.remove('drag-over');  // Remove indicator when leaving
+      container.classList.remove('drag-over');  
     });
 
     container.addEventListener('drop', async e => {
       e.preventDefault();
-      container.classList.remove('drag-over');  // Remove indicator on drop
+      container.classList.remove('drag-over');  
 
       const taskId = e.dataTransfer.getData("text/plain");
       const newStatus = container.closest('.column').id;
@@ -35,7 +35,7 @@ function setupDragAndDrop() {
         const taskRef = doc(db, "tasks", taskId);
         await updateDoc(taskRef, { status: newStatus });
 
-        await updateLastActive();  // <-- NEW: update user's last active time
+        await updateLastActive(); 
       }
     });
   });
@@ -64,7 +64,7 @@ async function loadTasks(uid) {
         if (confirm("Delete this task?")) {
           await deleteDoc(doc(db, "tasks", taskId));
 
-          await updateLastActive();  // <-- NEW: update user's last active time
+          await updateLastActive();  
         }
       };
       card.appendChild(deleteBtn);
@@ -78,7 +78,7 @@ async function loadTasks(uid) {
       if (container) container.appendChild(card);
     });
 
-    setupDragAndDrop(); // Setup drag-drop after rendering tasks
+    setupDragAndDrop(); 
   });
 }
 
@@ -86,7 +86,7 @@ onAuthStateChanged(auth, user => {
   if (!user) window.location.href = "login.html";
   else {
     loadTasks(user.uid);
-    updateLastActive();  // <-- NEW: update user's last active time on page load
+    updateLastActive();  
   }
 });
 
