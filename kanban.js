@@ -7,9 +7,10 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
-  updateDoc
+  updateDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 import { updateLastActive } from './utils.js';  
 
 function setupDragAndDrop() {
@@ -88,8 +89,10 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  const userDoc = await getDoc(doc(db, "users", user.uid));
-  if (!userDoc.exists() || userDoc.data().active === false) {
+  const userDocSnap = await getDoc(doc(db, "users", user.uid));
+  const userData = userDocSnap.data();
+
+  if (!userDocSnap.exists() || userData.active === false) {
     alert("Your account has been deactivated. Please contact the administrator.");
     await signOut(auth);
     window.location.href = "login.html";
@@ -99,7 +102,6 @@ onAuthStateChanged(auth, async (user) => {
   loadTasks(user.uid);
   updateLastActive();
 });
-
 
 window.addTask = async function () {
   const title = prompt("Enter task title:");
