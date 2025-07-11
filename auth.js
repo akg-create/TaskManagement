@@ -35,7 +35,26 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 
     const userDocRef = doc(db, "users", userCred.user.uid);
     const userDocSnap = await getDoc(userDocRef);
-    const isAdmin = userDocSnap.exists() && userDocSnap.data().isAdmin;
+
+    if (!userDocSnap.exists()) {
+      alert("User record not found.");
+      return;
+    }
+
+    const userData = userDocSnap.data();
+
+    // ✅ Check if user is deactivated
+    if (userData.active === false) {
+      alert("Your account has been deactivated. Please contact the administrator.");
+      return;
+    }
+
+    // ✅ Log the last login timestamp
+    await updateDoc(userDocRef, {
+      lastLogin: serverTimestamp()
+    });
+
+    const isAdmin = userData.isAdmin === true;
 
     if (isAdmin) {
       const goToAdmin = confirm("You're logged in as Admin. Go to Admin Panel?");
