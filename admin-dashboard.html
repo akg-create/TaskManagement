@@ -13,15 +13,15 @@
 <section>
   <h3>User Stats</h3>
   <p>Total Users: <span id="totalUsers">0</span></p>
-  <p>Active Users: <span id="activeUsers">0</span></p>
-  <p>Inactive Users: <span id="inactiveUsers">0</span></p>
+  <p>Currently Active Users: <span id="activeUsers">0</span></p>
+  <p>Deactivated Users: <span id="inactiveUsers">0</span></p>
 </section>
 
 <section>
-  <h4>Active Users</h4>
+  <h4>Currently Active Users</h4>
   <ul id="activeUserList"></ul>
 
-  <h4>Inactive Users</h4>
+  <h4>Currently Inactive Users</h4>
   <ul id="inactiveUserList"></ul>
 </section>
 
@@ -75,16 +75,44 @@
     activeList.innerHTML = "";
     inactiveList.innerHTML = "";
 
-    usersSnap.forEach(doc => {
-      const user = doc.data();
-      totalUsers++;
-      const li = document.createElement("li");
-      li.textContent = user.username || user.email;
+    const now = new Date();
+    const ACTIVE_THRESHOLD_MINUTES = 5;
 
-      if (user.active) {
+    usersSnap.forEach(docSnap => {
+      const user = docSnap.data();
+      const uid = docSnap.id;
+      totalUsers++;
+
+      const li = document.createElement("li");
+      const displayName = user.username || user.email || uid;
+      const lastActive = user.lastActive?.toDate?.();
+      const isDeactivated = user.active === false;
+
+      if (isDeactivated) {
+        li.textContent = `${displayName} - Deactivated`;
+        inactiveUsers++;
+        inactiveList.appendChild(li);
+        return;
+      }
+
+      if (!lastActive) {
+        li.textContent = `${displayName} - No recent activity`;
+        inactiveUsers++;
+        inactiveList.appendChild(li);
+        return;
+      }
+
+      const minutesAgo = Math.floor((now - lastActive) / 60000);
+      const timeString = minutesAgo < 1
+        ? 'just now'
+        : `${minutesAgo} min ago`;
+
+      if (minutesAgo <= ACTIVE_THRESHOLD_MINUTES) {
+        li.textContent = `${displayName} - Active (${timeString})`;
         activeUsers++;
         activeList.appendChild(li);
       } else {
+        li.textContent = `${displayName} - Inactive (${timeString})`;
         inactiveUsers++;
         inactiveList.appendChild(li);
       }
@@ -131,7 +159,6 @@
 
     const ctx = document.getElementById("taskCategoryChart").getContext("2d");
 
-    // Destroy old chart if it exists
     if (taskChart) taskChart.destroy();
 
     taskChart = new Chart(ctx, {
@@ -170,7 +197,6 @@
 
     summary.textContent = `Showing ${filteredTasks.length} tasks from ${start.toDateString()} to ${end.toDateString()}`;
 
-    // Show task titles
     list.innerHTML = "";
     filteredTasks.forEach(t => {
       const li = document.createElement("li");
@@ -188,3 +214,4 @@
 </script>
 </body>
 </html>
+
