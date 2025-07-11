@@ -14,7 +14,8 @@
   <h3>User Stats</h3>
   <p>Total Users: <span id="totalUsers">0</span></p>
   <p>Currently Active Users: <span id="activeUsers">0</span></p>
-  <p>Deactivated Users: <span id="inactiveUsers">0</span></p>
+  <p>Currently Inactive Users: <span id="inactiveUsers">0</span></p>
+  <p>Deactivated Users (by Admin): <span id="deactivatedUserCount">0</span></p>
 </section>
 
 <section>
@@ -23,6 +24,9 @@
 
   <h4>Currently Inactive Users</h4>
   <ul id="inactiveUserList"></ul>
+
+  <h4>Deactivated Users</h4>
+  <ul id="deactivatedUserList"></ul>
 </section>
 
 <section>
@@ -62,94 +66,92 @@
     await loadStats();
   });
 
-async function loadStats() {
-  const usersSnap = await getDocs(collection(db, "users"));
-  const tasksSnap = await getDocs(collection(db, "tasks"));
+  async function loadStats() {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const tasksSnap = await getDocs(collection(db, "tasks"));
 
-  let totalUsers = 0;
-  let activeUsers = 0;
-  let inactiveUsers = 0;
-  let deactivatedUsers = 0;
+    let totalUsers = 0;
+    let activeUsers = 0;
+    let inactiveUsers = 0;
+    let deactivatedUsers = 0;
 
-  const activeList = document.getElementById("activeUserList");
-  const inactiveList = document.getElementById("inactiveUserList");
+    const activeList = document.getElementById("activeUserList");
+    const inactiveList = document.getElementById("inactiveUserList");
+    const deactivatedList = document.getElementById("deactivatedUserList");
 
-  activeList.innerHTML = "";
-  inactiveList.innerHTML = "";
+    activeList.innerHTML = "";
+    inactiveList.innerHTML = "";
+    deactivatedList.innerHTML = "";
 
-  const now = new Date();
-  const ACTIVE_THRESHOLD_MINUTES = 5;
+    const now = new Date();
+    const ACTIVE_THRESHOLD_MINUTES = 5;
 
-  usersSnap.forEach(docSnap => {
-    const user = docSnap.data();
-    const uid = docSnap.id;
-    totalUsers++;
+    usersSnap.forEach(docSnap => {
+      const user = docSnap.data();
+      const uid = docSnap.id;
+      totalUsers++;
 
-    const li = document.createElement("li");
-    const displayName = user.username || user.email || uid;
-    const lastActive = user.lastActive?.toDate?.();
-    const isDeactivated = user.active === false;
+      const li = document.createElement("li");
+      const displayName = user.username || user.email || uid;
+      const lastActive = user.lastActive?.toDate?.();
+      const isDeactivated = user.active === false;
 
-    if (isDeactivated) {
-      li.textContent = `${displayName} - Deactivated by Admin`;
-      deactivatedUsers++;
-      inactiveList.appendChild(li);  
-      return;
-    }
+      if (isDeactivated) {
+        deactivatedUsers++;
+        li.textContent = `${displayName} - Deactivated by Admin`;
+        deactivatedList.appendChild(li);
+        return;
+      }
 
-    if (!lastActive) {
-      li.textContent = `${displayName} - No recent activity`;
-      inactiveUsers++;
-      inactiveList.appendChild(li);
-      return;
-    }
+      if (!lastActive) {
+        inactiveUsers++;
+        li.textContent = `${displayName} - No recent activity`;
+        inactiveList.appendChild(li);
+        return;
+      }
 
-    const minutesAgo = Math.floor((now - lastActive) / 60000);
-    const timeString = minutesAgo < 1 ? "just now" : `${minutesAgo} min ago`;
+      const minutesAgo = Math.floor((now - lastActive) / 60000);
+      const timeString = minutesAgo < 1 ? "just now" : `${minutesAgo} min ago`;
 
-    if (minutesAgo <= ACTIVE_THRESHOLD_MINUTES) {
-      li.textContent = `${displayName} - Active (${timeString})`;
-      activeUsers++;
-      activeList.appendChild(li);
-    } else {
-      li.textContent = `${displayName} - Inactive (${timeString})`;
-      inactiveUsers++;
-      inactiveList.appendChild(li);
-    }
-  });
+      if (minutesAgo <= ACTIVE_THRESHOLD_MINUTES) {
+        activeUsers++;
+        li.textContent = `${displayName} - Active (${timeString})`;
+        activeList.appendChild(li);
+      } else {
+        inactiveUsers++;
+        li.textContent = `${displayName} - Inactive (${timeString})`;
+        inactiveList.appendChild(li);
+      }
+    });
 
-  document.getElementById("totalUsers").textContent = totalUsers;
-  document.getElementById("activeUsers").textContent = activeUsers;
-  document.getElementById("inactiveUsers").textContent = inactiveUsers;
+    document.getElementById("totalUsers").textContent = totalUsers;
+    document.getElementById("activeUsers").textContent = activeUsers;
+    document.getElementById("inactiveUsers").textContent = inactiveUsers;
+    document.getElementById("deactivatedUserCount").textContent = deactivatedUsers;
 
-  
-  const deactivatedEl = document.getElementById("deactivatedUserCount");
-  if (deactivatedEl) deactivatedEl.textContent = deactivatedUsers;
+    // Prepare task data
+    taskData = [];
+    tasksSnap.forEach(doc => {
+      const task = doc.data();
+      task.created_at = task.created_at?.toDate?.() || new Date();
+      task.title = task.title || "Untitled";
+      task.status = task.status || "Unknown";
 
-  // Prepare task data
-  taskData = [];
-  tasksSnap.forEach(doc => {
-    const task = doc.data();
-    task.created_at = task.created_at?.toDate?.() || new Date();
-    task.title = task.title || "Untitled";
-    task.status = task.status || "Unknown";
+      // Normalize moderation type
+      if (["ToDo", "InProgress", "Done"].includes(task.status)) {
+        task.moderation = "approved";
+      } else if (task.status === "rejected") {
+        task.moderation = "rejected";
+      } else {
+        task.moderation = "unknown";
+      }
 
-    // Normalize moderation type
-    if (["ToDo", "InProgress", "Done"].includes(task.status)) {
-      task.moderation = "approved";
-    } else if (task.status === "rejected") {
-      task.moderation = "rejected";
-    } else {
-      task.moderation = "unknown";
-    }
+      taskData.push(task);
+    });
 
-    taskData.push(task);
-  });
-
-  document.getElementById("totalTasks").textContent = taskData.length;
-  drawTaskCategoryChart(taskData);
-}
-
+    document.getElementById("totalTasks").textContent = taskData.length;
+    drawTaskCategoryChart(taskData);
+  }
 
   function drawTaskCategoryChart(data) {
     const categoryCounts = { ToDo: 0, InProgress: 0, Done: 0, Rejected: 0 };
@@ -219,4 +221,3 @@ async function loadStats() {
 </script>
 </body>
 </html>
-
