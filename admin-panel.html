@@ -205,7 +205,7 @@
       return;
     }
     await updateDoc(doc(db, "users", uid), { active: state });
-    alert("User status updated.");
+    alert(`User has been ${state ? "activated" : "deactivated"}.`);
     await loadUsers();
   };
 
