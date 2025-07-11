@@ -43,6 +43,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 
     if (!userDocSnap.exists()) {
       alert("User record not found.");
+      await signOut(auth); 
       return;
     }
 
