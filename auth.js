@@ -4,7 +4,8 @@ import {
   signInWithEmailAndPassword,
   signOut
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+import { updateLastActive } from './utils.js';  // <-- import helper
 
 // Register
 document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
@@ -16,7 +17,9 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
   const userCred = await createUserWithEmailAndPassword(auth, email, password);
   await setDoc(doc(db, "users", userCred.user.uid), {
     username,
-    email
+    email,
+    active: true,          // ensure user is active by default
+    lastActive: serverTimestamp()
   });
   alert('Registration successful! Redirecting to dashboard...');
   setTimeout(() => {
@@ -43,16 +46,19 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 
     const userData = userDocSnap.data();
 
-    // ✅ Check if user is deactivated
+    // Check if user is deactivated
     if (userData.active === false) {
       alert("Your account has been deactivated. Please contact the administrator.");
       return;
     }
 
-    // ✅ Log the last login timestamp
+    // Log the last login and last active timestamps
     await updateDoc(userDocRef, {
-      lastLogin: serverTimestamp()
+      lastLogin: serverTimestamp(),
+      lastActive: serverTimestamp()
     });
+
+    await updateLastActive(); // Also call the helper for consistency
 
     const isAdmin = userData.isAdmin === true;
 
@@ -76,4 +82,3 @@ window.logout = async function () {
   await signOut(auth);
   window.location.href = "login.html";
 };
-
