@@ -62,89 +62,94 @@
     await loadStats();
   });
 
-  async function loadStats() {
-    const usersSnap = await getDocs(collection(db, "users"));
-    const tasksSnap = await getDocs(collection(db, "tasks"));
+async function loadStats() {
+  const usersSnap = await getDocs(collection(db, "users"));
+  const tasksSnap = await getDocs(collection(db, "tasks"));
 
-    let totalUsers = 0;
-    let activeUsers = 0;
-    let inactiveUsers = 0;
+  let totalUsers = 0;
+  let activeUsers = 0;
+  let inactiveUsers = 0;
+  let deactivatedUsers = 0;
 
-    const activeList = document.getElementById("activeUserList");
-    const inactiveList = document.getElementById("inactiveUserList");
-    activeList.innerHTML = "";
-    inactiveList.innerHTML = "";
+  const activeList = document.getElementById("activeUserList");
+  const inactiveList = document.getElementById("inactiveUserList");
 
-    const now = new Date();
-    const ACTIVE_THRESHOLD_MINUTES = 5;
+  activeList.innerHTML = "";
+  inactiveList.innerHTML = "";
 
-    usersSnap.forEach(docSnap => {
-      const user = docSnap.data();
-      const uid = docSnap.id;
-      totalUsers++;
+  const now = new Date();
+  const ACTIVE_THRESHOLD_MINUTES = 5;
 
-      const li = document.createElement("li");
-      const displayName = user.username || user.email || uid;
-      const lastActive = user.lastActive?.toDate?.();
-      const isDeactivated = user.active === false;
+  usersSnap.forEach(docSnap => {
+    const user = docSnap.data();
+    const uid = docSnap.id;
+    totalUsers++;
 
-      if (isDeactivated) {
-        li.textContent = `${displayName} - Deactivated`;
-        inactiveUsers++;
-        inactiveList.appendChild(li);
-        return;
-      }
+    const li = document.createElement("li");
+    const displayName = user.username || user.email || uid;
+    const lastActive = user.lastActive?.toDate?.();
+    const isDeactivated = user.active === false;
 
-      if (!lastActive) {
-        li.textContent = `${displayName} - No recent activity`;
-        inactiveUsers++;
-        inactiveList.appendChild(li);
-        return;
-      }
+    if (isDeactivated) {
+      li.textContent = `${displayName} - Deactivated by Admin`;
+      deactivatedUsers++;
+      inactiveList.appendChild(li);  
+      return;
+    }
 
-      const minutesAgo = Math.floor((now - lastActive) / 60000);
-      const timeString = minutesAgo < 1
-        ? 'just now'
-        : `${minutesAgo} min ago`;
+    if (!lastActive) {
+      li.textContent = `${displayName} - No recent activity`;
+      inactiveUsers++;
+      inactiveList.appendChild(li);
+      return;
+    }
 
-      if (minutesAgo <= ACTIVE_THRESHOLD_MINUTES) {
-        li.textContent = `${displayName} - Active (${timeString})`;
-        activeUsers++;
-        activeList.appendChild(li);
-      } else {
-        li.textContent = `${displayName} - Inactive (${timeString})`;
-        inactiveUsers++;
-        inactiveList.appendChild(li);
-      }
-    });
+    const minutesAgo = Math.floor((now - lastActive) / 60000);
+    const timeString = minutesAgo < 1 ? "just now" : `${minutesAgo} min ago`;
 
-    document.getElementById("totalUsers").textContent = totalUsers;
-    document.getElementById("activeUsers").textContent = activeUsers;
-    document.getElementById("inactiveUsers").textContent = inactiveUsers;
+    if (minutesAgo <= ACTIVE_THRESHOLD_MINUTES) {
+      li.textContent = `${displayName} - Active (${timeString})`;
+      activeUsers++;
+      activeList.appendChild(li);
+    } else {
+      li.textContent = `${displayName} - Inactive (${timeString})`;
+      inactiveUsers++;
+      inactiveList.appendChild(li);
+    }
+  });
 
-    // Prepare task data
-    taskData = [];
-    tasksSnap.forEach(doc => {
-      const task = doc.data();
-      task.created_at = task.created_at?.toDate?.() || new Date();
-      task.title = task.title || "Untitled";
-      task.status = task.status || "Unknown";
+  document.getElementById("totalUsers").textContent = totalUsers;
+  document.getElementById("activeUsers").textContent = activeUsers;
+  document.getElementById("inactiveUsers").textContent = inactiveUsers;
 
-      // Normalize moderation type
-      if (["ToDo", "InProgress", "Done"].includes(task.status)) {
-        task.moderation = "approved";
-      } else if (task.status === "rejected") {
-        task.moderation = "rejected";
-      } else {
-        task.moderation = "unknown";
-      }
+  
+  const deactivatedEl = document.getElementById("deactivatedUserCount");
+  if (deactivatedEl) deactivatedEl.textContent = deactivatedUsers;
 
-      taskData.push(task);
-    });
+  // Prepare task data
+  taskData = [];
+  tasksSnap.forEach(doc => {
+    const task = doc.data();
+    task.created_at = task.created_at?.toDate?.() || new Date();
+    task.title = task.title || "Untitled";
+    task.status = task.status || "Unknown";
 
-    document.getElementById("totalTasks").textContent = taskData.length;
-    drawTaskCategoryChart(taskData);
-  }
+    // Normalize moderation type
+    if (["ToDo", "InProgress", "Done"].includes(task.status)) {
+      task.moderation = "approved";
+    } else if (task.status === "rejected") {
+      task.moderation = "rejected";
+    } else {
+      task.moderation = "unknown";
+    }
+
+    taskData.push(task);
+  });
+
+  document.getElementById("totalTasks").textContent = taskData.length;
+  drawTaskCategoryChart(taskData);
+}
+
 
   function drawTaskCategoryChart(data) {
     const categoryCounts = { ToDo: 0, InProgress: 0, Done: 0, Rejected: 0 };
