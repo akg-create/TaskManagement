@@ -83,7 +83,7 @@
       const uid = docSnap.id;
       const li = document.createElement("li");
       li.innerHTML = `
-          ${u.username || u.email || "No name"} - <strong>${u.active ? "Active" : "Inactive"}</strong>
+          ${u.username || u.email || "No name"} - <strong>${u.active ? "Active" : "Deactivated"}</strong>
           <button class="small-btn" onclick="viewUserInfo('${uid}')">View Info</button>
           <button class="small-btn" onclick="viewUserTasks('${uid}')">View Tasks</button>
           <button class="small-btn" onclick="showAddTaskModal('${uid}')">Add Task</button>
@@ -103,7 +103,7 @@
     document.getElementById("infoUserId").textContent = uid;
     document.getElementById("infoUsername").value = user.username || "";
     document.getElementById("infoEmail").textContent = user.email || "";
-    document.getElementById("infoStatus").textContent = user.active ? "Active" : "Inactive";
+    document.getElementById("infoStatus").textContent = user.active ? "Active" : "Deactivated";
     document.getElementById("userInfoModal").classList.remove("hidden");
   };
 
