@@ -1,3 +1,4 @@
+// auth.js
 import { auth, db } from './firebase-config.js';
 import {
   createUserWithEmailAndPassword,
@@ -17,14 +18,17 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
   await setDoc(doc(db, "users", userCred.user.uid), {
     username,
     email,
-    active: true,        
-    lastActive: null     
+    isAdmin: false,
+    active: true,              // Ensures user is activated by default
+    lastActive: null,
+    lastLogin: null
   });
+
   alert('Registration successful! Redirecting to dashboard...');
   setTimeout(() => {
     window.location.href = "dashboard.html";
-  }, 1500); 
-}); 
+  }, 1500);
+});
 
 // Login
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
@@ -34,7 +38,6 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 
   try {
     const userCred = await signInWithEmailAndPassword(auth, email, password);
-
     const userDocRef = doc(db, "users", userCred.user.uid);
     const userDocSnap = await getDoc(userDocRef);
 
@@ -45,29 +48,17 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 
     const userData = userDocSnap.data();
 
-    // Block login if user is deactivated
     if (userData.active === false) {
       alert("Your account has been deactivated. Please contact the administrator.");
+      await signOut(auth); // Make sure user is not signed in
       return;
     }
 
-    // Log last login timestamp
-    await updateDoc(userDocRef, {
-      lastLogin: serverTimestamp()
-    });
+    await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
 
     const isAdmin = userData.isAdmin === true;
+    window.location.href = isAdmin ? "admin-panel.html" : "dashboard.html";
 
-    if (isAdmin) {
-      const goToAdmin = confirm("You're logged in as Admin. Go to Admin Panel?");
-      if (goToAdmin) {
-        window.location.href = "admin-panel.html";
-      } else {
-        window.location.href = "dashboard.html";
-      }
-    } else {
-      window.location.href = "dashboard.html";
-    }
   } catch (err) {
     alert("Login failed: " + err.message);
   }
