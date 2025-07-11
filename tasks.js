@@ -1,5 +1,6 @@
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { auth, db } from './firebase-config.js';
+import { updateLastActive } from './utils.js'; 
 
 document.getElementById("taskForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -17,10 +18,12 @@ document.getElementById("taskForm").addEventListener("submit", async (e) => {
   try {
     await addDoc(collection(db, "tasks"), {
       title,
-      status,  // this is now the actual value
+      status,  
       user_id: user.uid,
       created_at: serverTimestamp()
     });
+
+    await updateLastActive(); 
 
     taskTitleInput.value = "";
     statusInput.value = "ToDo";
