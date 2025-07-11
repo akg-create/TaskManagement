@@ -82,13 +82,24 @@ async function loadTasks(uid) {
   });
 }
 
-onAuthStateChanged(auth, user => {
-  if (!user) window.location.href = "login.html";
-  else {
-    loadTasks(user.uid);
-    updateLastActive();  
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "login.html";
+    return;
   }
+
+  const userDoc = await getDoc(doc(db, "users", user.uid));
+  if (!userDoc.exists() || userDoc.data().active === false) {
+    alert("Your account has been deactivated. Please contact the administrator.");
+    await signOut(auth);
+    window.location.href = "login.html";
+    return;
+  }
+
+  loadTasks(user.uid);
+  updateLastActive();
 });
+
 
 window.addTask = async function () {
   const title = prompt("Enter task title:");
