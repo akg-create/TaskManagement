@@ -10,6 +10,7 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+import { updateLastActive } from './utils.js';  // <-- NEW import
 
 function setupDragAndDrop() {
   document.querySelectorAll('.task-container').forEach(container => {
@@ -33,6 +34,8 @@ function setupDragAndDrop() {
       if (taskId && newStatus) {
         const taskRef = doc(db, "tasks", taskId);
         await updateDoc(taskRef, { status: newStatus });
+
+        await updateLastActive();  // <-- NEW: update user's last active time
       }
     });
   });
@@ -60,6 +63,8 @@ async function loadTasks(uid) {
         e.stopPropagation();
         if (confirm("Delete this task?")) {
           await deleteDoc(doc(db, "tasks", taskId));
+
+          await updateLastActive();  // <-- NEW: update user's last active time
         }
       };
       card.appendChild(deleteBtn);
@@ -79,7 +84,10 @@ async function loadTasks(uid) {
 
 onAuthStateChanged(auth, user => {
   if (!user) window.location.href = "login.html";
-  else loadTasks(user.uid);
+  else {
+    loadTasks(user.uid);
+    updateLastActive();  // <-- NEW: update user's last active time on page load
+  }
 });
 
 window.addTask = async function () {
@@ -92,4 +100,6 @@ window.addTask = async function () {
     user_id: auth.currentUser.uid,
     created_at: new Date()
   });
+
+  await updateLastActive();  // <-- NEW: update user's last active time on adding task
 };
