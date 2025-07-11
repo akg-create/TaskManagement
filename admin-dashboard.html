@@ -44,11 +44,11 @@
   import { auth, db } from './firebase-config.js';
   import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
   import {
-    collection, getDocs, doc, getDoc,
-    query, where
+    collection, getDocs, doc, getDoc
   } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
   let taskData = [];
+  let taskChart = null;
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) return window.location.href = "login.html";
@@ -79,7 +79,7 @@
       const user = doc.data();
       totalUsers++;
       const li = document.createElement("li");
-      li.textContent = `${user.username || user.email}`;
+      li.textContent = user.username || user.email;
 
       if (user.active) {
         activeUsers++;
@@ -94,87 +94,54 @@
     document.getElementById("activeUsers").textContent = activeUsers;
     document.getElementById("inactiveUsers").textContent = inactiveUsers;
 
+    // Prepare task data
     taskData = [];
-
     tasksSnap.forEach(doc => {
       const task = doc.data();
-    
-      // Ensure proper fallback defaults
       task.created_at = task.created_at?.toDate?.() || new Date();
       task.title = task.title || "Untitled";
       task.status = task.status || "Unknown";
-    
-      // If your app uses a separate moderation status field like `task.moderation`, use that.
-      // Otherwise, infer rejection if the status is explicitly 'rejected'
+
+      // Normalize moderation type
       if (["ToDo", "InProgress", "Done"].includes(task.status)) {
         task.moderation = "approved";
       } else if (task.status === "rejected") {
         task.moderation = "rejected";
       } else {
-        task.moderation = "approved"; // Default fallback
+        task.moderation = "unknown";
       }
-    
+
       taskData.push(task);
     });
-    
+
     document.getElementById("totalTasks").textContent = taskData.length;
     drawTaskCategoryChart(taskData);
   }
 
   function drawTaskCategoryChart(data) {
-  const categoryCounts = {
-    ToDo: 0,
-    InProgress: 0,
-    Done: 0,
-    Rejected: 0
-  };
+    const categoryCounts = { ToDo: 0, InProgress: 0, Done: 0, Rejected: 0 };
 
-  data.forEach(task => {
-    const moderationStatus = task.moderation || "approved"; // fallback
-    const kanbanStatus = task.status;
-
-    if (moderationStatus === "rejected") {
-      categoryCounts.Rejected++;
-    } else if (categoryCounts.hasOwnProperty(kanbanStatus)) {
-      categoryCounts[kanbanStatus]++;
-    }
-  });
-
-  const ctx = document.getElementById("taskCategoryChart").getContext("2d");
-
-  if (window.taskChartInstance) {
-    window.taskChartInstance.destroy(); // Destroy old chart if exists
-  }
-
-  window.taskChartInstance = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: Object.keys(categoryCounts),
-      datasets: [{
-        label: "Task Status Breakdown",
-        data: Object.values(categoryCounts),
-        backgroundColor: ["#3498db", "#f1c40f", "#2ecc71", "#e74c3c"]
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: { beginAtZero: true }
+    data.forEach(task => {
+      if (task.moderation === "rejected") {
+        categoryCounts.Rejected++;
+      } else if (["ToDo", "InProgress", "Done"].includes(task.status)) {
+        categoryCounts[task.status]++;
       }
-    }
-  });
-}
-
+    });
 
     const ctx = document.getElementById("taskCategoryChart").getContext("2d");
-    new Chart(ctx, {
+
+    // Destroy old chart if it exists
+    if (taskChart) taskChart.destroy();
+
+    taskChart = new Chart(ctx, {
       type: "bar",
       data: {
         labels: Object.keys(categoryCounts),
         datasets: [{
           label: "Task Status Breakdown",
           data: Object.values(categoryCounts),
-          backgroundColor: ["#3498db", "#f1c40f", "#2ecc71"]
+          backgroundColor: ["#3498db", "#f1c40f", "#2ecc71", "#e74c3c"]
         }]
       },
       options: {
@@ -221,4 +188,3 @@
 </script>
 </body>
 </html>
-
