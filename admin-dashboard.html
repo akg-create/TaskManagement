@@ -35,6 +35,8 @@
   <canvas id="taskCategoryChart" width="400" height="200"></canvas>
   <section style="margin-top: 50px;"></section>
   <canvas id="userRegistrationChart" width="400" height="200"></canvas>
+  <section style="margin-top: 50px;"></section>
+  <canvas id="userActivityChart" width="400" height="200"></canvas>canvas>
 </section>
 
 <section>
@@ -164,6 +166,46 @@ allMonths.forEach(month => {
 });
 
 drawUserRegistrationChart(registrationCounts);
+function drawUserActivityChart(taskData) {
+  const usageByMonth = {};
+
+  taskData.forEach(task => {
+    if (task.created_at) {
+      const date = task.created_at;
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!usageByMonth[monthKey]) {
+        usageByMonth[monthKey] = 0;
+      }
+      usageByMonth[monthKey]++;
+    }
+  });
+
+  const sortedMonths = Object.keys(usageByMonth).sort();
+  const usageCounts = sortedMonths.map(month => usageByMonth[month]);
+
+  const ctx = document.getElementById("userActivityChart").getContext("2d");
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: sortedMonths,
+      datasets: [{
+        label: 'Total Tasks Created Over Time',
+        data: usageCounts,
+        fill: false,
+        borderColor: '#9b59b6',
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
 
     // Prepare task data
     taskData = [];
@@ -187,6 +229,7 @@ drawUserRegistrationChart(registrationCounts);
 
     document.getElementById("totalTasks").textContent = taskData.length;
     drawTaskCategoryChart(taskData);
+    drawUserActivityChart(taskData);
   }
 
   function drawTaskCategoryChart(data) {
