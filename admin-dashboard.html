@@ -312,28 +312,31 @@ function drawUserActivityChart(taskData) {
 }
 
 
+function parseLocalDate(dateString) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 window.applyFilters = () => {
-  const startInput = document.getElementById("startDate").valueAsDate;
-  const endInput = document.getElementById("endDate").valueAsDate;
+  const startInputValue = document.getElementById("startDate").value;
+  const endInputValue = document.getElementById("endDate").value;
   const summary = document.getElementById("filterSummary");
   const list = document.getElementById("filteredTaskList");
 
-  if (!startInput || !endInput) {
+  if (!startInputValue || !endInputValue) {
     alert("Please select both start and end dates.");
     return;
   }
 
-  // Create copies for filtering with full end day
-  const start = new Date(startInput);
-  start.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(endInput);
-  endOfDay.setHours(23, 59, 59, 999);
+  const start = parseLocalDate(startInputValue);
+  const end = parseLocalDate(endInputValue);
+  end.setHours(23, 59, 59, 999); // set end of the day
 
   const filteredTasks = taskData.filter(t =>
-    t.created_at >= start && t.created_at <= endOfDay
+    t.created_at >= start && t.created_at <= end
   );
 
-  summary.textContent = `Showing ${filteredTasks.length} tasks from ${formatDate(startInput)} to ${formatDate(endInput)}`;
+  summary.textContent = `Showing ${filteredTasks.length} tasks from ${formatDate(start)} to ${formatDate(end)}`;
 
   list.innerHTML = "";
   filteredTasks.forEach(t => {
@@ -344,6 +347,7 @@ window.applyFilters = () => {
 
   drawTaskCategoryChart(filteredTasks);
 };
+
 
 
 
