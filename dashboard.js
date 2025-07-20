@@ -28,7 +28,7 @@ async function fetchData() {
 }
 
 function renderCharts() {
-  // Example: Pie Chart - Active vs Inactive
+  // Pie Chart - Active vs Inactive
   const activeCount = userData.filter(u => u.active).length;
   const inactiveCount = userData.length - activeCount;
 
@@ -43,7 +43,42 @@ function renderCharts() {
     }
   });
 
-  // More chart logic (bar charts, line charts) will go here
+   const usageByMonth = {};
+
+  taskData.forEach(task => {
+    if (task.created_at?.toDate) {
+      const date = task.created_at.toDate();
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!usageByMonth[monthKey]) {
+        usageByMonth[monthKey] = 0;
+      }
+      usageByMonth[monthKey]++;
+    }
+  });
+
+  // Sort months chronologically
+  const sortedMonths = Object.keys(usageByMonth).sort();
+  const usageCounts = sortedMonths.map(month => usageByMonth[month]);
+
+  new Chart(document.getElementById("usageLineChart"), {
+    type: 'line',
+    data: {
+      labels: sortedMonths,
+      datasets: [{
+        label: 'Total Tasks Created',
+        data: usageCounts,
+        fill: false,
+        borderColor: '#3498db',
+        tension: 0.1
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
 }
 
 window.logout = async function () {
