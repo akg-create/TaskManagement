@@ -303,26 +303,27 @@ function drawUserActivityChart(taskData) {
 
 
 window.applyFilters = () => {
-  const start = document.getElementById("startDate").valueAsDate;
-  const end = document.getElementById("endDate").valueAsDate;
+  const startInput = document.getElementById("startDate").valueAsDate;
+  const endInput = document.getElementById("endDate").valueAsDate;
+  const summary = document.getElementById("filterSummary");
+  const list = document.getElementById("filteredTaskList");
 
-  if (!start || !end) {
+  if (!startInput || !endInput) {
     alert("Please select both start and end dates.");
     return;
   }
 
-  
-  const endOfDay = new Date(end);
+  // Create copies for filtering with full end day
+  const start = new Date(startInput);
+  const endOfDay = new Date(endInput);
   endOfDay.setHours(23, 59, 59, 999);
-
-  const summary = document.getElementById("filterSummary");
-  const list = document.getElementById("filteredTaskList");
 
   const filteredTasks = taskData.filter(t =>
     t.created_at >= start && t.created_at <= endOfDay
   );
 
-  summary.textContent = `Showing ${filteredTasks.length} tasks from ${start.toDateString()} to ${end.toDateString()}`;
+  // For display: show startInput and endInput (not endOfDay)
+  summary.textContent = `Showing ${filteredTasks.length} tasks from ${startInput.toDateString()} to ${endInput.toDateString()}`;
 
   list.innerHTML = "";
   filteredTasks.forEach(t => {
@@ -333,6 +334,7 @@ window.applyFilters = () => {
 
   drawTaskCategoryChart(filteredTasks);
 };
+
 
 
   window.logout = async function () {
