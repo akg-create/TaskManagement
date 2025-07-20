@@ -325,6 +325,7 @@ window.applyFilters = () => {
 
   // Create copies for filtering with full end day
   const start = new Date(startInput);
+  start.setHours(0, 0, 0, 0);
   const endOfDay = new Date(endInput);
   endOfDay.setHours(23, 59, 59, 999);
 
