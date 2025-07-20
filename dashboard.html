@@ -1,4 +1,90 @@
-<!DOCTYPE html>
+import { auth, db } from './firebase-config.js';
+import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+import {
+  collection, getDocs, query, where, Timestamp
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+let userData = [];
+let taskData = [];
+
+onAuthStateChanged(auth, async user => {
+  if (!user) return location.href = "login.html";
+  const userDoc = await getDoc(doc(db, "users", user.uid));
+  if (!userDoc.exists() || !userDoc.data().isAdmin) {
+    alert("Access Denied");
+    return location.href = "login.html";
+  }
+
+  await fetchData();
+  renderCharts();
+});
+
+async function fetchData() {
+  const usersSnap = await getDocs(collection(db, "users"));
+  userData = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  const tasksSnap = await getDocs(collection(db, "tasks"));
+  taskData = tasksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+function renderCharts() {
+  // Pie Chart - Active vs Inactive
+  const activeCount = userData.filter(u => u.active).length;
+  const inactiveCount = userData.length - activeCount;
+
+  new Chart(document.getElementById("activeUserChart"), {
+    type: 'pie',
+    data: {
+      labels: ['Active', 'Inactive'],
+      datasets: [{
+        data: [activeCount, inactiveCount],
+        backgroundColor: ['#2ecc71', '#e74c3c'],
+      }]
+    }
+  });
+
+  const usageByMonth = {};
+
+  taskData.forEach(task => {
+    if (task.created_at?.toDate) {
+      const date = task.created_at.toDate();
+      const monthKey = ${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')};
+
+      if (!usageByMonth[monthKey]) {
+        usageByMonth[monthKey] = 0;
+      }
+      usageByMonth[monthKey]++;
+    }
+  });
+
+  // Sort months chronologically
+  const sortedMonths = Object.keys(usageByMonth).sort();
+  const usageCounts = sortedMonths.map(month => usageByMonth[month]);
+
+  new Chart(document.getElementById("usageLineChart"), {
+    type: 'line',
+    data: {
+      labels: sortedMonths,
+      datasets: [{
+        label: 'Total Tasks Created',
+        data: usageCounts,
+        fill: false,
+        borderColor: '#3498db',
+        tension: 0.1
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  }); 
+}
+
+window.logout = async function () {
+  await signOut(auth);
+  location.href = "login.html";
+}; this is the dashboard.js file i need the last line graph to be displayed on the dashboard.html: <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -75,33 +161,59 @@
       min-height: 100px;
     }
 
-    canvas {
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      margin: 20px auto;
-      display: block;
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
-    h3 {
-      text-align: center;
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .modal-content input,
+    .modal-content select,
+    .modal-content button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 1rem;
+    }
+
+    .modal-content button[type="submit"] {
+      background-color: #3498db;
+      color: white;
+      border: none;
+    }
+
+    .modal-content button[type="button"] {
+      background-color: #ccc;
     }
   </style>
-
-  <!-- Include Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
   <div class="dashboard-container">
-    <!-- TOP BUTTONS -->
+    <!-- TOP CENTERED BUTTONS -->
     <div class="button-row">
       <button onclick="openTaskForm()">Add Task</button>
       <button onclick="logout()">Logout</button>
       <button id="adminBtn" style="display: none;">Admin Panel</button>
     </div>
 
-    <!-- KANBAN BOARD -->
+    <!-- KANBAN BOARD BELOW BUTTONS -->
     <div id="kanban-board">
       <div class="column" id="ToDo">
         <h3>To Do</h3>
@@ -116,14 +228,6 @@
         <div class="task-container"></div>
       </div>
     </div>
-
-    <!-- USER REGISTRATION LINE CHART -->
-    <h3>User Registration</h3>
-    <canvas id="usageLineChart" width="600" height="300"></canvas>
-    
-    <!-- USER ACTIVITY LINE CHART -->
-    <h3>User Activity Over Time</h3>
-    <canvas id="userActivityLineChart" width="600" height="300"></canvas>
   </div>
 
   <!-- TASK MODAL -->
@@ -141,7 +245,7 @@
     </form>
   </div>
 
-  <!-- SCRIPTS -->
+  <!-- LOGOUT SCRIPT -->
   <script type="module">
     import { auth } from './firebase-config.js';
     import { signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
@@ -165,7 +269,6 @@
       document.getElementById("taskModal").classList.add("hidden");
     }
   </script>
-
   <script type="module">
     import { auth, db } from './firebase-config.js';
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
@@ -182,8 +285,5 @@
       }
     });
   </script>
-
-  <script type="module" src="dashboard.js"></script>
-
 </body>
 </html>
