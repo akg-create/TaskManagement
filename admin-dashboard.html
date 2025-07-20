@@ -36,7 +36,7 @@
   <section style="margin-top: 50px;"></section>
   <canvas id="userRegistrationChart" width="400" height="200"></canvas>
   <section style="margin-top: 50px;"></section>
-  <canvas id="userActivityChart" width="400" height="200"></canvas>canvas>
+  <canvas id="userActivityChart" width="400" height="200"></canvas>
 </section>
 
 <section>
@@ -59,12 +59,13 @@
   let taskChart = null;
 
   // Utility function to format dates consistently
-  function formatDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
+ function formatDate(date) {
+  return date.toLocaleDateString(undefined, { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric'
+  });
+}
 
 
 function getLastFourMonths() {
