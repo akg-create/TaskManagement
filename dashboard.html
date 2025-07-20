@@ -75,59 +75,33 @@
       min-height: 100px;
     }
 
-    .modal {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal.hidden {
-      display: none;
-    }
-
-    .modal-content {
+    canvas {
       background: white;
-      padding: 25px;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin: 20px auto;
+      display: block;
     }
 
-    .modal-content input,
-    .modal-content select,
-    .modal-content button {
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      font-size: 1rem;
-    }
-
-    .modal-content button[type="submit"] {
-      background-color: #3498db;
-      color: white;
-      border: none;
-    }
-
-    .modal-content button[type="button"] {
-      background-color: #ccc;
+    h3 {
+      text-align: center;
     }
   </style>
+
+  <!-- Include Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
   <div class="dashboard-container">
-    <!-- TOP CENTERED BUTTONS -->
+    <!-- TOP BUTTONS -->
     <div class="button-row">
       <button onclick="openTaskForm()">Add Task</button>
       <button onclick="logout()">Logout</button>
       <button id="adminBtn" style="display: none;">Admin Panel</button>
     </div>
 
-    <!-- KANBAN BOARD BELOW BUTTONS -->
+    <!-- KANBAN BOARD -->
     <div id="kanban-board">
       <div class="column" id="ToDo">
         <h3>To Do</h3>
@@ -142,6 +116,10 @@
         <div class="task-container"></div>
       </div>
     </div>
+
+    <!-- USAGE LINE CHART -->
+    <h3>Task Creation Over Time</h3>
+    <canvas id="usageLineChart" width="600" height="300"></canvas>
   </div>
 
   <!-- TASK MODAL -->
@@ -159,7 +137,7 @@
     </form>
   </div>
 
-  <!-- LOGOUT SCRIPT -->
+  <!-- SCRIPTS -->
   <script type="module">
     import { auth } from './firebase-config.js';
     import { signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
@@ -183,6 +161,7 @@
       document.getElementById("taskModal").classList.add("hidden");
     }
   </script>
+
   <script type="module">
     import { auth, db } from './firebase-config.js';
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
@@ -199,5 +178,8 @@
       }
     });
   </script>
+
+  <script type="module" src="dashboard.js"></script>
+
 </body>
 </html>
