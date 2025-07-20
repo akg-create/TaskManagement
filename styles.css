@@ -16,6 +16,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  height: 100%;
 }
 
 /* Shared Input and Button Styling */
@@ -66,6 +67,7 @@ a:hover {
   max-width: 1200px;
   width: 100%;
   margin-top: 30px;
+  height: 100%;
 }
 
 /* Top Buttons Row */
