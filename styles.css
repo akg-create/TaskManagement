@@ -66,6 +66,10 @@ a:hover {
   max-width: 1200px;
   width: 100%;
   margin-top: 30px;
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 /* Top Buttons Row */
@@ -83,6 +87,7 @@ a:hover {
   gap: 20px;
   padding: 0 20px 40px;
   flex-wrap: wrap;
+  flex-grow: 1;
 }
 
 /* Columns */
@@ -95,6 +100,7 @@ a:hover {
   width: 300px;
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
 }
 
 .column h3 {
