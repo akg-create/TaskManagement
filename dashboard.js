@@ -43,7 +43,7 @@ function renderCharts() {
     }
   });
 
-   const usageByMonth = {};
+   /*const usageByMonth = {};
 
   taskData.forEach(task => {
     if (task.created_at?.toDate) {
@@ -78,7 +78,7 @@ function renderCharts() {
         y: { beginAtZero: true }
       }
     }
-  });
+  }); */
 }
 
 window.logout = async function () {
