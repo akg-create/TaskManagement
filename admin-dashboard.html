@@ -302,32 +302,38 @@ function drawUserActivityChart(taskData) {
 }
 
 
-  window.applyFilters = () => {
-    const start = document.getElementById("startDate").valueAsDate;
-    const end = document.getElementById("endDate").valueAsDate;
-    const summary = document.getElementById("filterSummary");
-    const list = document.getElementById("filteredTaskList");
+window.applyFilters = () => {
+  const start = document.getElementById("startDate").valueAsDate;
+  const end = document.getElementById("endDate").valueAsDate;
 
-    if (!start || !end) {
-      alert("Please select both start and end dates.");
-      return;
-    }
+  if (!start || !end) {
+    alert("Please select both start and end dates.");
+    return;
+  }
 
-    const filteredTasks = taskData.filter(t =>
-      t.created_at >= start && t.created_at <= end
-    );
+  
+  const endOfDay = new Date(end);
+  endOfDay.setHours(23, 59, 59, 999);
 
-    summary.textContent = `Showing ${filteredTasks.length} tasks from ${start.toDateString()} to ${end.toDateString()}`;
+  const summary = document.getElementById("filterSummary");
+  const list = document.getElementById("filteredTaskList");
 
-    list.innerHTML = "";
-    filteredTasks.forEach(t => {
-      const li = document.createElement("li");
-      li.textContent = `${t.title} - ${t.status} (${t.created_at.toLocaleDateString()})`;
-      list.appendChild(li);
-    });
+  const filteredTasks = taskData.filter(t =>
+    t.created_at >= start && t.created_at <= endOfDay
+  );
 
-    drawTaskCategoryChart(filteredTasks);
-  };
+  summary.textContent = `Showing ${filteredTasks.length} tasks from ${start.toDateString()} to ${end.toDateString()}`;
+
+  list.innerHTML = "";
+  filteredTasks.forEach(t => {
+    const li = document.createElement("li");
+    li.textContent = `${t.title} - ${t.status} (${t.created_at.toLocaleDateString()})`;
+    list.appendChild(li);
+  });
+
+  drawTaskCategoryChart(filteredTasks);
+};
+
 
   window.logout = async function () {
     await signOut(auth);
