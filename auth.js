@@ -10,31 +10,47 @@ import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gst
 // Register
 document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const email = document.getElementById('registerEmail').value;
-  const password = document.getElementById('registerPassword').value;
-  const username = document.getElementById('registerUsername').value;
+  const email = document.getElementById('registerEmail').value.trim();
+  const password = document.getElementById('registerPassword').value.trim();
+  const username = document.getElementById('registerUsername').value.trim();
 
-  const userCred = await createUserWithEmailAndPassword(auth, email, password);
-  await setDoc(doc(db, "users", userCred.user.uid), {
-    username,
-    email,
-    isAdmin: false,
-    active: true,              // Ensures user is activated by default
-    lastActive: null,
-    lastLogin: null
-  });
+  if (!username || !email || !password) {
+    alert("Please fill out all registration fields.");
+    return;
+  }
 
-  alert('Registration successful! Redirecting to dashboard...');
-  setTimeout(() => {
-    window.location.href = "dashboard.html";
-  }, 1500);
+  try {
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, "users", userCred.user.uid), {
+      username,
+      email,
+      isAdmin: false,
+      active: true,
+      lastActive: serverTimestamp(),
+      lastLogin: serverTimestamp()
+    });
+
+    alert('Registration successful! Redirecting to dashboard...');
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 1500);
+
+  } catch (err) {
+    console.error("Registration error:", err);
+    alert("Registration failed: " + err.message);
+  }
 });
 
 // Login
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+
+  if (!email || !password) {
+    alert("Please enter both email and password.");
+    return;
+  }
 
   try {
     const userCred = await signInWithEmailAndPassword(auth, email, password);
@@ -42,8 +58,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     const userDocSnap = await getDoc(userDocRef);
 
     if (!userDocSnap.exists()) {
-      alert("User record not found.");
-      await signOut(auth); 
+      alert("User record not found in database.");
+      await signOut(auth);
       return;
     }
 
@@ -51,16 +67,20 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 
     if (userData.active === false) {
       alert("Your account has been deactivated. Please contact the administrator.");
-      await signOut(auth); // Make sure user is not signed in
+      await signOut(auth);
       return;
     }
 
-    await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
+    await updateDoc(userDocRef, {
+      lastLogin: serverTimestamp(),
+      lastActive: serverTimestamp()
+    });
 
     const isAdmin = userData.isAdmin === true;
     window.location.href = isAdmin ? "admin-panel.html" : "dashboard.html";
 
   } catch (err) {
+    console.error("Login error:", err);
     alert("Login failed: " + err.message);
   }
 });
@@ -70,3 +90,4 @@ window.logout = async function () {
   await signOut(auth);
   window.location.href = "login.html";
 };
+
