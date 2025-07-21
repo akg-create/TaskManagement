@@ -189,6 +189,7 @@ a:hover {
   margin: 4px 6px;
   border-radius: 6px;
   width: auto;
+  display: inline-block;
 }
 
 /* 🔽 Scrollable, Clean Task List (Admin Panel) */
