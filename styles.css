@@ -188,6 +188,7 @@ a:hover {
   font-size: 0.95rem;
   margin: 4px 6px;
   border-radius: 6px;
+  width: auto;
 }
 
 /* 🔽 Scrollable, Clean Task List (Admin Panel) */
